@@ -5,6 +5,13 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-javadoc
+  cancel-in-progress: true
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -19,11 +26,10 @@ jobs:
           cache: gradle
       - name: Generate Javadoc
         run: ./gradlew javadoc
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@4.1.8
+      - name: Deploy Javadoc
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: javadoc
-          CLEAN: true
-          FOLDER: build/docs/javadoc
-          TARGET_FOLDER: javadoc
+          branch: javadoc
+          clean: true
+          folder: build/docs/javadoc
+          target-folder: javadoc
