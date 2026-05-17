@@ -12,16 +12,15 @@ import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.slots.Slot;
 import baritone.api.utils.Rotation;
 import baritone.api.utils.input.Input;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.screen.DeathScreen;
-import net.minecraft.client.gui.screen.GameMenuScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.SlotActionType;
-
 import java.util.Optional;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.DeathScreen;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class PlayerInteractionFixChain extends TaskChain {
 
@@ -105,7 +104,7 @@ public class PlayerInteractionFixChain extends TaskChain {
 
         if (currentStack != null && !currentStack.isEmpty()) {
             //noinspection PointlessNullCheck
-            if (_lastHandStack == null || !ItemStack.areEqual(currentStack, _lastHandStack)) {
+            if (_lastHandStack == null || !ItemStack.matches(currentStack, _lastHandStack)) {
                 // We're holding a new item in our stack!
                 _stackHeldTimeout.reset();
                 _lastHandStack = currentStack.copy();
@@ -120,11 +119,11 @@ public class PlayerInteractionFixChain extends TaskChain {
             Debug.logMessage("Cursor stack is held for too long, will move back to inventory.");
             Optional<Slot> moveTo = mod.getItemStorage().getSlotThatCanFitInPlayerInventory(_lastHandStack, false).or(() -> StorageHelper.getGarbageSlot(mod));
             if (moveTo.isPresent()) {
-                mod.getSlotHandler().clickSlot(moveTo.get(), 0, SlotActionType.PICKUP);
+                mod.getSlotHandler().clickSlot(moveTo.get(), 0, ContainerInput.PICKUP);
             } else {
                 // Try throwing away cursor slot if it's garbage
                 if (ItemHelper.canThrowAwayStack(mod, StorageHelper.getItemStackInCursorSlot())) {
-                    mod.getSlotHandler().clickSlot(Slot.UNDEFINED, 0, SlotActionType.PICKUP);
+                    mod.getSlotHandler().clickSlot(Slot.UNDEFINED, 0, ContainerInput.PICKUP);
                 } else {
                     Debug.logMessage("Cursor stack edge case: Full inventory AND NO GARBAGE! We're stuck.");
                 }
@@ -145,12 +144,12 @@ public class PlayerInteractionFixChain extends TaskChain {
         if (!mod.getModSettings().shouldCloseScreenWhenLookingOrMining())
             return false;
         // Only check look if we've had the same screen open for a while
-        Screen openScreen = MinecraftClient.getInstance().currentScreen;
+        Screen openScreen = Minecraft.getInstance().screen;
         if (openScreen != _lastScreen) {
             _mouseMovingButScreenOpenTimeout.reset();
         }
         // We're in the player screen/a screen we DON'T want to cancel out of
-        if (openScreen == null || openScreen instanceof ChatScreen || openScreen instanceof GameMenuScreen || openScreen instanceof DeathScreen) {
+        if (openScreen == null || openScreen instanceof ChatScreen || openScreen instanceof PauseScreen || openScreen instanceof DeathScreen) {
             _mouseMovingButScreenOpenTimeout.reset();
             return false;
         }

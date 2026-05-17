@@ -1,9 +1,8 @@
 package adris.altoclef.util.serialization;
 
 import com.fasterxml.jackson.core.JsonToken;
-import net.minecraft.util.math.ChunkPos;
-
 import java.util.List;
+import net.minecraft.world.level.ChunkPos;
 
 public class ChunkPosDeserializer extends AbstractVectorDeserializer<ChunkPos, Integer> {
     @Override

@@ -22,14 +22,6 @@ import adris.altoclef.util.helpers.ItemHelper;
 import adris.altoclef.util.helpers.LookHelper;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.progresscheck.MovementProgressChecker;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +29,13 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Roams around the world to terminate Sarah Khaannah
@@ -58,17 +57,17 @@ public class TerminatorTask extends Task {
     );
     private final Task _foodTask = new CollectFoodTask(80);
     private final TimerGame _runAwayExtraTime = new TimerGame(10);
-    private final Predicate<PlayerEntity> _canTerminate;
+    private final Predicate<Player> _canTerminate;
     private final ScanChunksInRadius _scanTask;
     private final TimerGame _funnyMessageTimer = new TimerGame(10);
-    private Vec3d _closestPlayerLastPos;
-    private Vec3d _closestPlayerLastObservePos;
+    private Vec3 _closestPlayerLastPos;
+    private Vec3 _closestPlayerLastObservePos;
     private Task _runAwayTask;
     private String _currentVisibleTarget;
 
     private Task _armorTask;
 
-    public TerminatorTask(BlockPos center, double scanRadius, Predicate<PlayerEntity> canTerminate) {
+    public TerminatorTask(BlockPos center, double scanRadius, Predicate<Player> canTerminate) {
         _canTerminate = canTerminate;
         _scanTask = new ScanChunksInRadius(center, scanRadius);
     }
@@ -86,18 +85,18 @@ public class TerminatorTask extends Task {
     @Override
     protected Task onTick(AltoClef mod) {
 
-        Optional<Entity> closest = mod.getEntityTracker().getClosestEntity(mod.getPlayer().getPos(), toPunk -> shouldPunk(mod, (PlayerEntity) toPunk), PlayerEntity.class);
+        Optional<Entity> closest = mod.getEntityTracker().getClosestEntity(mod.getPlayer().position(), toPunk -> shouldPunk(mod, (Player) toPunk), Player.class);
 
         if (closest.isPresent()) {
-            _closestPlayerLastPos = closest.get().getPos();
-            _closestPlayerLastObservePos = mod.getPlayer().getPos();
+            _closestPlayerLastPos = closest.get().position();
+            _closestPlayerLastObservePos = mod.getPlayer().position();
         }
 
         if (!isReadyToPunk(mod)) {
 
             if (_runAwayTask != null && _runAwayTask.isActive() && !_runAwayTask.isFinished(mod)) {
                 // If our last "scare" was too long ago or there are no more nearby players...
-                boolean noneRemote = (closest.isEmpty() || !closest.get().isInRange(mod.getPlayer(), FEAR_DISTANCE));
+                boolean noneRemote = (closest.isEmpty() || !closest.get().closerThan(mod.getPlayer(), FEAR_DISTANCE));
                 if (_runAwayExtraTime.elapsed() && noneRemote) {
                     Debug.logMessage("Stop running away, we're good.");
                     // Stop running away.
@@ -108,26 +107,26 @@ public class TerminatorTask extends Task {
             }
 
             // See if there's anyone nearby.
-            if (mod.getEntityTracker().getClosestEntity(mod.getPlayer().getPos(), entityAccept -> {
-                if (!shouldPunk(mod, (PlayerEntity) entityAccept)) {
+            if (mod.getEntityTracker().getClosestEntity(mod.getPlayer().position(), entityAccept -> {
+                if (!shouldPunk(mod, (Player) entityAccept)) {
                     return false;
                 }
-                if (entityAccept.isInRange(mod.getPlayer(), 15)) {
+                if (entityAccept.closerThan(mod.getPlayer(), 15)) {
                     // We're close, count us.
                     return true;
                 } else {
                     // Too far away.
-                    if (!entityAccept.isInRange(mod.getPlayer(), FEAR_DISTANCE)) return false;
+                    if (!entityAccept.closerThan(mod.getPlayer(), FEAR_DISTANCE)) return false;
                     // We may be far and obstructed, check.
                     return LookHelper.seesPlayer(entityAccept, mod.getPlayer(), FEAR_SEE_DISTANCE);
                 }
-            }, PlayerEntity.class).isPresent()) {
+            }, Player.class).isPresent()) {
                 // RUN!
 
                 _runAwayExtraTime.reset();
                 try {
                     _runAwayTask = new RunAwayFromPlayersTask(() -> {
-                        Stream<PlayerEntity> stream = mod.getEntityTracker().getTrackedEntities(PlayerEntity.class).stream();
+                        Stream<Player> stream = mod.getEntityTracker().getTrackedEntities(Player.class).stream();
                         synchronized (BaritoneHelper.MINECRAFT_LOCK) {
                             return stream.filter(toAccept -> shouldPunk(mod, toAccept)).collect(Collectors.toList());
                         }
@@ -153,24 +152,24 @@ public class TerminatorTask extends Task {
             }
 
             // Get some food so we can last a little longer.
-            if ((mod.getPlayer().getHungerManager().getFoodLevel() < (20 - 3 * 2) || mod.getPlayer().getHealth() < 10) && StorageHelper.calculateInventoryFoodScore(mod) <= 0) {
+            if ((mod.getPlayer().getFoodData().getFoodLevel() < (20 - 3 * 2) || mod.getPlayer().getHealth() < 10) && StorageHelper.calculateInventoryFoodScore(mod) <= 0) {
                 return _foodTask;
             }
 
-            if (mod.getEntityTracker().getClosestEntity(mod.getPlayer().getPos(), toPunk -> shouldPunk(mod, (PlayerEntity) toPunk), PlayerEntity.class).isPresent()) {
+            if (mod.getEntityTracker().getClosestEntity(mod.getPlayer().position(), toPunk -> shouldPunk(mod, (Player) toPunk), Player.class).isPresent()) {
                 setDebugState("Punking.");
                 return new DoToClosestEntityTask(
                     entity -> {
-                        if (entity instanceof PlayerEntity) {
-                            tryDoFunnyMessageTo(mod, (PlayerEntity) entity);
+                        if (entity instanceof Player) {
+                            tryDoFunnyMessageTo(mod, (Player) entity);
                             return new KillPlayerTask(entity.getName().getString());
                         }
                         // Should never happen.
                         Debug.logWarning("This should never happen.");
                         return _scanTask;
                     },
-                    interact -> shouldPunk(mod, (PlayerEntity) interact),
-                    PlayerEntity.class
+                    interact -> shouldPunk(mod, (Player) interact),
+                    Player.class
                 );
             }
         }
@@ -252,13 +251,13 @@ public class TerminatorTask extends Task {
         return StorageHelper.isArmorEquippedAll(mod, ItemHelper.DIAMOND_ARMORS) && mod.getItemStorage().hasItem(Items.DIAMOND_SWORD);
     }
 
-    private boolean shouldPunk(AltoClef mod, PlayerEntity player) {
-        if (player == null || player.isDead()) return false;
+    private boolean shouldPunk(AltoClef mod, Player player) {
+        if (player == null || player.isDeadOrDying()) return false;
         if (player.isCreative() || player.isSpectator()) return false;
         return !mod.getButler().isUserAuthorized(player.getName().getString()) && _canTerminate.test(player);
     }
 
-    private void tryDoFunnyMessageTo(AltoClef mod, PlayerEntity player) {
+    private void tryDoFunnyMessageTo(AltoClef mod, Player player) {
         if (_funnyMessageTimer.elapsed()) {
             if (LookHelper.seesPlayer(player, mod.getPlayer(), 80)) {
                 String name = player.getName().getString();
@@ -288,8 +287,8 @@ public class TerminatorTask extends Task {
 
         @Override
         protected boolean isChunkWithinSearchSpace(AltoClef mod, ChunkPos pos) {
-            double cx = (pos.getStartX() + pos.getEndX()) / 2.0;
-            double cz = (pos.getStartZ() + pos.getEndZ()) / 2.0;
+            double cx = (pos.getMinBlockX() + pos.getMaxBlockX()) / 2.0;
+            double cz = (pos.getMinBlockZ() + pos.getMaxBlockZ()) / 2.0;
             double dx = _center.getX() - cx,
                     dz = _center.getZ() - cz;
             return dx * dx + dz * dz < _radius * _radius;
@@ -302,12 +301,12 @@ public class TerminatorTask extends Task {
                 double lowestScore = Double.POSITIVE_INFINITY;
                 ChunkPos bestChunk = null;
                 for (ChunkPos toSearch : chunks) {
-                    double cx = (toSearch.getStartX() + toSearch.getEndX() + 1) / 2.0, cz = (toSearch.getStartZ() + toSearch.getEndZ() + 1) / 2.0;
+                    double cx = (toSearch.getMinBlockX() + toSearch.getMaxBlockX() + 1) / 2.0, cz = (toSearch.getMinBlockZ() + toSearch.getMaxBlockZ() + 1) / 2.0;
                     double px = mod.getPlayer().getX(), pz = mod.getPlayer().getZ();
                     double distanceSq = (cx - px) * (cx - px) + (cz - pz) * (cz - pz);
-                    double pdx = _closestPlayerLastPos.getX() - cx, pdz = _closestPlayerLastPos.getZ() - cz;
+                    double pdx = _closestPlayerLastPos.x() - cx, pdz = _closestPlayerLastPos.z() - cz;
                     double distanceToLastPlayerPos = pdx * pdx + pdz * pdz;
-                    Vec3d direction = _closestPlayerLastPos.subtract(_closestPlayerLastObservePos).multiply(1, 0, 1).normalize();
+                    Vec3 direction = _closestPlayerLastPos.subtract(_closestPlayerLastObservePos).multiply(1, 0, 1).normalize();
                     double dirx = direction.x, dirz = direction.z;
                     double correctDistance = pdx * dirx + pdz * dirz;
                     double tempX = dirx * correctDistance,

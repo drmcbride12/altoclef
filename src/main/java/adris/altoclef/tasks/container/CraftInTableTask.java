@@ -19,18 +19,14 @@ import adris.altoclef.util.slots.CraftingTableSlot;
 import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
 import adris.altoclef.util.time.TimerGame;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.screen.CraftingScreenHandler;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
+import net.minecraft.world.inventory.CraftingMenu;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Blocks;
 
 /**
  * Crafts an item in a crafting table, obtaining and placing the table down if none was found.
@@ -229,7 +225,7 @@ class DoCraftInTableTask extends DoStuffInContainerTask {
 
     @Override
     protected boolean isContainerOpen(AltoClef mod) {
-        return (mod.getPlayer().currentScreenHandler instanceof CraftingScreenHandler);
+        return (mod.getPlayer().containerMenu instanceof CraftingMenu);
     }
 
     @Override
@@ -244,7 +240,7 @@ class DoCraftInTableTask extends DoStuffInContainerTask {
         }
 
         // Reset refresh timer if we have an item in the output slot
-        boolean bigCrafting = (mod.getPlayer().currentScreenHandler instanceof CraftingScreenHandler);
+        boolean bigCrafting = (mod.getPlayer().containerMenu instanceof CraftingMenu);
         Slot outputSlot = bigCrafting ? CraftingTableSlot.OUTPUT_SLOT : PlayerSlot.CRAFT_OUTPUT_SLOT;
         if (!StorageHelper.getItemStackInSlot(outputSlot).isEmpty()) {
             _craftResetTimer.reset();

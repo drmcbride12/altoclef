@@ -1,21 +1,21 @@
 package adris.altoclef.util.helpers;
 
 import adris.altoclef.AltoClef;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.DamageUtil;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.EndermanEntity;
-import net.minecraft.entity.mob.PiglinEntity;
-import net.minecraft.entity.mob.ZombifiedPiglinEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.CombatRules;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
+import net.minecraft.world.entity.monster.piglin.Piglin;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * Helper functions to interpret entity state
@@ -27,32 +27,32 @@ public class EntityHelper {
     public static boolean isAngryAtPlayer(AltoClef mod, Entity mob) {
         boolean hostile = isGenerallyHostileToPlayer(mod, mob);
         if (mob instanceof LivingEntity entity) {
-            return hostile && entity.canSee(mod.getPlayer());
+            return hostile && entity.hasLineOfSight(mod.getPlayer());
         }
         return hostile;
     }
 
     public static boolean isGenerallyHostileToPlayer(AltoClef mod, Entity hostile) {
         // TODO: Ignore on Peaceful difficulty.
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         // NOTE: These do not work.
-        if (hostile instanceof EndermanEntity enderman) {
-            return enderman.isAngryAt(player) && enderman.isAngry();
+        if (hostile instanceof EnderMan enderman) {
+            return enderman.isCreepy();
         }
-        if (hostile instanceof PiglinEntity) {
+        if (hostile instanceof Piglin) {
             // Angry if we're not wearing gold
             return !StorageHelper.isArmorEquipped(mod, ItemHelper.GOLDEN_ARMORS);
         }
-        if (hostile instanceof ZombifiedPiglinEntity zombie) {
+        if (hostile instanceof ZombifiedPiglin zombie) {
             // Will ALWAYS be false.
-            return zombie.hasAngerTime() && zombie.isAngryAt(player);
+            return zombie.isAngry();
         }
         return !isTradingPiglin(hostile);
     }
 
     public static boolean isTradingPiglin(Entity entity) {
-        if (entity instanceof PiglinEntity pig) {
-            for (ItemStack stack : pig.getItemsHand()) {
+        if (entity instanceof Piglin pig) {
+            for (ItemStack stack : new ItemStack[]{pig.getMainHandItem(), pig.getOffhandItem()}) {
                 if (stack.getItem().equals(Items.GOLD_INGOT)) {
                     // We're trading with this one, ignore it.
                     return true;
@@ -66,36 +66,24 @@ public class EntityHelper {
      * Calculate the resulting damage dealt to a player as a result of some damage.
      * If this player were to receive this damage, the player's health will be subtracted by the resulting value.
      */
-    public static double calculateResultingPlayerDamage(PlayerEntity player, DamageSource source, double damageAmount) {
+    public static double calculateResultingPlayerDamage(Player player, DamageSource source, double damageAmount) {
         // Copied logic from `PlayerEntity.applyDamage`
 
-        if (player.isInvulnerableTo(source))
-            return 0;
-
         // Armor Base
-        if (!source.bypassesArmor()) {
-            damageAmount = DamageUtil.getDamageLeft((float) damageAmount, (float) player.getArmor(), (float) player.getAttributeValue(EntityAttributes.GENERIC_ARMOR_TOUGHNESS));
+        if (!source.is(DamageTypeTags.BYPASSES_ARMOR)) {
+            damageAmount = CombatRules.getDamageAfterAbsorb(player, (float) damageAmount, source, (float) player.getArmorValue(), (float) player.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
         }
 
         // Enchantments & Potions
-        if (!source.isUnblockable()) {
+        if (!source.is(DamageTypeTags.BYPASSES_EFFECTS)) {
             int k;
-            if (player.hasStatusEffect(StatusEffects.RESISTANCE) && source != DamageSource.OUT_OF_WORLD) {
+            if (player.hasEffect(MobEffects.RESISTANCE) && !source.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
                 //noinspection ConstantConditions
-                k = (player.getStatusEffect(StatusEffects.RESISTANCE).getAmplifier() + 1) * 5;
+                k = (player.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
                 int j = 25 - k;
                 double f = damageAmount * (double)j;
                 double g = damageAmount;
                 damageAmount = Math.max(f / 25.0F, 0.0F);
-            }
-
-            if (damageAmount <= 0.0) {
-                damageAmount = 0.0;
-            } else {
-                k = EnchantmentHelper.getProtectionAmount(player.getArmorItems(), source);
-                if (k > 0) {
-                    damageAmount = DamageUtil.getInflictedDamage((float)damageAmount, (float)k);
-                }
             }
         }
 

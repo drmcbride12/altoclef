@@ -5,10 +5,9 @@ import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.helpers.ItemHelper;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.slots.Slot;
-import net.minecraft.item.ItemStack;
-
 import java.util.Objects;
 import java.util.Optional;
+import net.minecraft.world.item.ItemStack;
 
 public class EnsureFreeCursorSlotTask extends Task {
 

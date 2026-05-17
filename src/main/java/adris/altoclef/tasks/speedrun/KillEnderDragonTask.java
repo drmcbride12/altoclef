@@ -20,25 +20,24 @@ import baritone.api.pathing.goals.GoalGetToBlock;
 import baritone.api.utils.Rotation;
 import baritone.api.utils.RotationUtils;
 import baritone.api.utils.input.Input;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.boss.dragon.EnderDragonPart;
-import net.minecraft.entity.boss.dragon.phase.Phase;
-import net.minecraft.entity.boss.dragon.phase.PhaseType;
-import net.minecraft.entity.decoration.EndCrystalEntity;
-import net.minecraft.entity.mob.EndermanEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Here we go
@@ -70,7 +69,7 @@ public class KillEnderDragonTask extends Task {
         mod.getBehaviour().push();
         mod.getBlockTracker().trackBlock(Blocks.END_PORTAL);
         // Don't forcefield endermen.
-        mod.getBehaviour().addForceFieldExclusion(entity -> entity instanceof EndermanEntity || entity instanceof EnderDragonEntity || entity instanceof EnderDragonPart);
+        mod.getBehaviour().addForceFieldExclusion(entity -> entity instanceof EnderMan || entity instanceof EnderDragon || entity instanceof EnderDragonPart);
         mod.getBehaviour().setPreferredStairs(true);
     }
 
@@ -113,7 +112,7 @@ public class KillEnderDragonTask extends Task {
         }
 
         if (!isRailingOnDragon() && _lookDownTimer.elapsed()) {
-            if (mod.getPlayer().isOnGround()) {
+            if (mod.getPlayer().onGround()) {
                 _lookDownTimer.reset();
                 mod.getClientBaritone().getLookBehavior().updateTarget(new Rotation(0f, -90f), true);
             }
@@ -123,7 +122,7 @@ public class KillEnderDragonTask extends Task {
         if (mod.getBlockTracker().anyFound(Blocks.END_PORTAL)) {
             setDebugState("Entering portal to beat the game.");
             return new DoToClosestBlockTask(
-                    blockPos -> new GetToBlockTask(blockPos.up(), false),
+                    blockPos -> new GetToBlockTask(blockPos.above(), false),
                     Blocks.END_PORTAL
             );
         }
@@ -132,7 +131,7 @@ public class KillEnderDragonTask extends Task {
         // If there are crystals, suicide blow em up.
         // If there are no crystals, punk the dragon if it's close.
         int MINIMUM_BUILDING_BLOCKS = 1;
-        if (mod.getEntityTracker().entityFound(EndCrystalEntity.class) && mod.getItemStorage().getItemCount(Items.DIRT, Items.COBBLESTONE, Items.NETHERRACK, Items.END_STONE) < MINIMUM_BUILDING_BLOCKS || (_collectBuildMaterialsTask.isActive() && !_collectBuildMaterialsTask.isFinished(mod))) {
+        if (mod.getEntityTracker().entityFound(EndCrystal.class) && mod.getItemStorage().getItemCount(Items.DIRT, Items.COBBLESTONE, Items.NETHERRACK, Items.END_STONE) < MINIMUM_BUILDING_BLOCKS || (_collectBuildMaterialsTask.isActive() && !_collectBuildMaterialsTask.isFinished(mod))) {
             if (StorageHelper.miningRequirementMetInventory(mod, MiningRequirement.WOOD)) {
                 mod.getBehaviour().addProtectedItems(Items.END_STONE);
                 setDebugState("Collecting building blocks to pillar to crystals");
@@ -143,22 +142,22 @@ public class KillEnderDragonTask extends Task {
         }
 
         // Blow up the nearest end crystal
-        if (mod.getEntityTracker().entityFound(EndCrystalEntity.class)) {
+        if (mod.getEntityTracker().entityFound(EndCrystal.class)) {
             setDebugState("Kamakazeeing crystals");
             return new DoToClosestEntityTask(
                 (toDestroy) -> {
-                    if (toDestroy.isInRange(mod.getPlayer(), 7)) {
+                    if (toDestroy.closerThan(mod.getPlayer(), 7)) {
                         mod.getControllerExtras().attack(toDestroy);
                     }
                     // Go next to the crystal, arbitrary where we just need to get close.
-                    return new GetToBlockTask(toDestroy.getBlockPos().add(1, 0, 0), false);
+                    return new GetToBlockTask(toDestroy.blockPosition().offset(1, 0, 0), false);
                 },
-                EndCrystalEntity.class
+                EndCrystal.class
             );
         }
 
         // Punk dragon
-        if (mod.getEntityTracker().entityFound(EnderDragonEntity.class)) {
+        if (mod.getEntityTracker().entityFound(EnderDragon.class)) {
             setDebugState("Punking dragon");
             return _punkTask;
         }
@@ -236,7 +235,7 @@ public class KillEnderDragonTask extends Task {
                     _wasReleased = true;
                 }
             }
-            if (_wasHitting && _hitResetTimer.elapsed() && mod.getPlayer().getAttackCooldownProgress(0) > 0.99) {
+            if (_wasHitting && _hitResetTimer.elapsed() && mod.getPlayer().getAttackStrengthScale(0) > 0.99) {
                 _wasHitting = false;
                 // Code duplication maybe?
                 //mod.getControllerExtras().mouseClickOverride(0, false);
@@ -266,16 +265,16 @@ public class KillEnderDragonTask extends Task {
         @Override
         protected Task onTick(AltoClef mod) {
 
-            if (!mod.getEntityTracker().entityFound(EnderDragonEntity.class)) {
+            if (!mod.getEntityTracker().entityFound(EnderDragon.class)) {
                 setDebugState("No dragon found.");
                 return null;
             }
-            EnderDragonEntity dragon = mod.getEntityTracker().getTrackedEntities(EnderDragonEntity.class).get(0);
+            EnderDragon dragon = mod.getEntityTracker().getTrackedEntities(EnderDragon.class).get(0);
 
-            Phase dragonPhase = dragon.getPhaseManager().getCurrent();
+            DragonPhaseInstance dragonPhase = dragon.getPhaseManager().getCurrentPhase();
             //Debug.logInternal("PHASE: " + dragonPhase);
 
-            boolean perchingOrGettingReady = dragonPhase.getType() == PhaseType.LANDING || dragonPhase.isSittingOrHovering();
+            boolean perchingOrGettingReady = dragonPhase.getPhase() == EnderDragonPhase.LANDING || dragonPhase.isSitting();
 
             switch (_mode) {
                 case RAILING -> {
@@ -289,15 +288,15 @@ public class KillEnderDragonTask extends Task {
                     //DamageSource.DRAGON_BREATH
                     Entity head = dragon.head;
                     // Go for the head
-                    if (head.isInRange(mod.getPlayer(), 7.5) && dragon.ticksSinceDeath <= 1) {
+                    if (head.closerThan(mod.getPlayer(), 7.5) && dragon.dragonDeathTime <= 1) {
                         // Equip weapon
                         AbstractKillEntityTask.equipWeapon(mod);
                         // Look torwards da dragon
-                        Vec3d targetLookPos = head.getPos().add(0, 3, 0);
+                        Vec3 targetLookPos = head.position().add(0, 3, 0);
                         Rotation targetRotation = RotationUtils.calcRotationFromVec3d(mod.getClientBaritone().getPlayerContext().playerHead(), targetLookPos, mod.getClientBaritone().getPlayerContext().playerRotations());
                         mod.getClientBaritone().getLookBehavior().updateTarget(targetRotation, true);
                         // Also look towards da dragon
-                        MinecraftClient.getInstance().options.autoJump = false;
+                        Minecraft.getInstance().options.autoJump().set(false);
                         mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.MOVE_FORWARD, true);
                         hit(mod);
                     } else {
@@ -313,8 +312,8 @@ public class KillEnderDragonTask extends Task {
                                 for (int dz = -2; dz <= 2; ++dz) {
                                     // We have sort of a rounded circle here.
                                     if (Math.abs(dx) == 2 && Math.abs(dz) == 2) continue;
-                                    BlockPos toCheck = _exitPortalTop.add(dx, bottomYDelta, dz);
-                                    double distSq = toCheck.getSquaredDistance(head.getPos());
+                                    BlockPos toCheck = _exitPortalTop.offset(dx, bottomYDelta, dz);
+                                    double distSq = toCheck.distToCenterSqr(head.position());
                                     if (distSq < closestDist) {
                                         closest = toCheck;
                                         closestDist = distSq;
@@ -335,7 +334,7 @@ public class KillEnderDragonTask extends Task {
                     if (perchingOrGettingReady) {
                         // We're perching!!
                         mod.getClientBaritone().getCustomGoalProcess().onLostControl();
-                        Debug.logMessage("Dragon perching detected. Dabar duosiu į snuki.");
+                        Debug.logMessage("Dragon perching detected. Dabar duosiu Ä¯ snuki.");
                         _mode = Mode.RAILING;
                         break;
                     }
@@ -401,7 +400,7 @@ public class KillEnderDragonTask extends Task {
                 BlockPos check = new BlockPos(x, y, z);
                 if (mod.getWorld().getBlockState(check).getBlock() == Blocks.END_STONE) {
                     // We found a spot!
-                    pos = check.up();
+                    pos = check.above();
                 }
             }
             return pos;

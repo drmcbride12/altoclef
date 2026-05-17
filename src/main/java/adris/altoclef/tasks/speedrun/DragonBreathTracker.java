@@ -7,17 +7,16 @@ import adris.altoclef.util.helpers.WorldHelper;
 import adris.altoclef.util.progresscheck.MovementProgressChecker;
 import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalRunAway;
-import net.minecraft.entity.AreaEffectCloudEntity;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.HashSet;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.AreaEffectCloud;
 
 public class DragonBreathTracker {
     private final HashSet<BlockPos> _breathBlocks = new HashSet<>();
 
     public void updateBreath(AltoClef mod) {
         _breathBlocks.clear();
-        for (AreaEffectCloudEntity cloud : mod.getEntityTracker().getTrackedEntities(AreaEffectCloudEntity.class)) {
+        for (AreaEffectCloud cloud : mod.getEntityTracker().getTrackedEntities(AreaEffectCloud.class)) {
             for (BlockPos bad : WorldHelper.getBlocksTouchingBox(mod, cloud.getBoundingBox())) {
                 _breathBlocks.add(bad);
             }

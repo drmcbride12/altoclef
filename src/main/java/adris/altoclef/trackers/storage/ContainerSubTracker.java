@@ -8,17 +8,31 @@ import adris.altoclef.trackers.Tracker;
 import adris.altoclef.trackers.TrackerManager;
 import adris.altoclef.util.Dimension;
 import adris.altoclef.util.helpers.WorldHelper;
-import net.minecraft.block.*;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.*;
-import net.minecraft.item.Item;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.util.Pair;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.world.level.block.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.*;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.BlastFurnaceScreen;
+import net.minecraft.client.gui.screens.inventory.ContainerScreen;
+import net.minecraft.client.gui.screens.inventory.FurnaceScreen;
+import net.minecraft.client.gui.screens.inventory.HopperScreen;
+import net.minecraft.client.gui.screens.inventory.ShulkerBoxScreen;
+import net.minecraft.client.gui.screens.inventory.SmokerScreen;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.AbstractFurnaceBlock;
+import net.minecraft.world.level.block.BarrelBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.world.level.block.HopperBlock;
+import net.minecraft.world.level.block.ShulkerBoxBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -70,7 +84,7 @@ public class ContainerSubTracker extends Tracker {
     }
     private void onScreenOpenFirstTick(final Screen screen) {
         _containerOpen = screen instanceof FurnaceScreen
-                || screen instanceof GenericContainerScreen
+                || screen instanceof ContainerScreen
                 || screen instanceof SmokerScreen
                 || screen instanceof BlastFurnaceScreen
                 || screen instanceof HopperScreen
@@ -83,11 +97,11 @@ public class ContainerSubTracker extends Tracker {
         _hasSentError = false;
     }
     public void onServerTick() {
-        if (MinecraftClient.getInstance().player == null)
+        if (Minecraft.getInstance().player == null)
             return;
         // If we haven't registered interacting with a block, try the currently "looking at" block
         if (_containerOpen && _lastBlockPosInteraction == null && _lastBlockInteraction == null) {
-            if (MinecraftClient.getInstance().crosshairTarget instanceof BlockHitResult bhit) {
+            if (Minecraft.getInstance().hitResult instanceof BlockHitResult bhit) {
                 Debug.logWarning("Screen open but no block interaction detected, using the block we're currently looking at.");
                 _lastBlockPosInteraction = bhit.getBlockPos();
                 _lastBlockInteraction = _mod.getWorld().getBlockState(_lastBlockPosInteraction).getBlock();
@@ -95,7 +109,7 @@ public class ContainerSubTracker extends Tracker {
         }
         if (_containerOpen && _lastBlockPosInteraction != null && _lastBlockInteraction != null) {
             BlockPos containerPos = _lastBlockPosInteraction;
-            ScreenHandler handler = MinecraftClient.getInstance().player.currentScreenHandler;
+            AbstractContainerMenu handler = Minecraft.getInstance().player.containerMenu;
             if (handler == null)
                 return;
 
@@ -162,20 +176,20 @@ public class ContainerSubTracker extends Tracker {
 
     public List<ContainerCache> getCachedContainers(Predicate<ContainerCache> accept) {
         List<ContainerCache> result = new ArrayList<>();
-        List<Pair<Dimension, BlockPos>> toRemove = new ArrayList<>();
+        List<Tuple<Dimension, BlockPos>> toRemove = new ArrayList<>();
         for (Dimension dim : _containerCaches.keySet()) {
             HashMap<BlockPos, ContainerCache> map = _containerCaches.get(dim);
             for (ContainerCache cache : map.values()) {
                 if (!isContainerCacheValid(dim, cache)) {
-                    toRemove.add(new Pair<>(dim, cache.getBlockPos()));
+                    toRemove.add(new Tuple<>(dim, cache.getBlockPos()));
                     continue;
                 }
                 if (accept.test(cache))
                     result.add(cache);
             }
         }
-        for (Pair<Dimension, BlockPos> remove : toRemove) {
-            _containerCaches.get(remove.getLeft()).remove(remove.getRight());
+        for (Tuple<Dimension, BlockPos> remove : toRemove) {
+            _containerCaches.get(remove.getA()).remove(remove.getB());
         }
         return result;
     }
@@ -184,7 +198,7 @@ public class ContainerSubTracker extends Tracker {
         return getCachedContainers(cache -> typeSet.contains(cache.getContainerType()));
     }
 
-    public Optional<ContainerCache> getClosestTo(Vec3d pos, Predicate<ContainerCache> accept) {
+    public Optional<ContainerCache> getClosestTo(Vec3 pos, Predicate<ContainerCache> accept) {
         double bestDist = Double.POSITIVE_INFINITY;
         Dimension dim = WorldHelper.getCurrentDimension();
 
@@ -196,7 +210,7 @@ public class ContainerSubTracker extends Tracker {
                 toRemove.add(cache.getBlockPos());
                 continue;
             }
-            double dist = cache.getBlockPos().getSquaredDistance(pos);
+            double dist = cache.getBlockPos().distToCenterSqr(pos);
             if (dist < bestDist) {
                 if (accept.test(cache)) {
                     bestDist = dist;
@@ -210,7 +224,7 @@ public class ContainerSubTracker extends Tracker {
         }
         return Optional.ofNullable(bestCache);
     }
-    public Optional<ContainerCache> getClosestTo(Vec3d pos, ContainerType ...types) {
+    public Optional<ContainerCache> getClosestTo(Vec3 pos, ContainerType ...types) {
         Set<ContainerType> typeSet = new HashSet<>(Arrays.asList(types));
         return getClosestTo(pos, cache -> typeSet.contains(cache.getContainerType()));
     }
@@ -218,7 +232,7 @@ public class ContainerSubTracker extends Tracker {
     public List<ContainerCache> getContainersWithItem(Item ...items) {
         return getCachedContainers(cache -> cache.hasItem(items));
     }
-    public Optional<ContainerCache> getClosestWithItem(Vec3d pos, Item ...items) {
+    public Optional<ContainerCache> getClosestWithItem(Vec3 pos, Item ...items) {
         return getClosestTo(pos, cache -> cache.hasItem(items));
     }
 

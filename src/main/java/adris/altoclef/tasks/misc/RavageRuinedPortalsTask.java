@@ -6,15 +6,13 @@ import adris.altoclef.tasks.movement.TimeoutWanderTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.Dimension;
 import adris.altoclef.util.helpers.WorldHelper;
-import net.minecraft.block.Blocks;
-
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 
 public class RavageRuinedPortalsTask extends Task {
     private List<BlockPos> _notRuinedPortalChests = new ArrayList<>();
@@ -92,10 +90,10 @@ public class RavageRuinedPortalsTask extends Task {
     }
 
     private boolean canBeLootablePortalChest(AltoClef mod, BlockPos blockPos) {
-        if (mod.getWorld().getBlockState(blockPos.up(1)).getBlock() == Blocks.WATER || blockPos.getY() < 50) {
+        if (mod.getWorld().getBlockState(blockPos.above(1)).getBlock() == Blocks.WATER || blockPos.getY() < 50) {
             return false;
         }
-        for (BlockPos check : WorldHelper.scanRegion(mod, blockPos.add(-4, -2, -4), blockPos.add(4, 2, 4))) {
+        for (BlockPos check : WorldHelper.scanRegion(mod, blockPos.offset(-4, -2, -4), blockPos.offset(4, 2, 4))) {
             if (mod.getWorld().getBlockState(check).getBlock() == Blocks.NETHERRACK) {
                 return true;
             }

@@ -8,18 +8,18 @@ import adris.altoclef.util.slots.CraftingTableSlot;
 import adris.altoclef.util.slots.CursorSlot;
 import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.ScreenHandler;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * Keeps track of the player's inventory items
@@ -31,7 +31,7 @@ public class InventorySubTracker extends Tracker {
     private final HashMap<Item, Integer> _itemCountsPlayer = new HashMap<>();
     private final HashMap<Item, Integer> _itemCountsContainer = new HashMap<>();
 
-    private ScreenHandler _prevScreenHandler;
+    private AbstractContainerMenu _prevScreenHandler;
 
     public InventorySubTracker(TrackerManager manager) {
         super(manager);
@@ -80,18 +80,21 @@ public class InventorySubTracker extends Tracker {
     }
 
     public List<ItemStack> getInventoryStacks(boolean includeCursor) {
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || player.getInventory() == null)
             return Collections.emptyList();
-        PlayerInventory inv = player.getInventory();
+        Inventory inv = player.getInventory();
         // 36 player + 1 offhand + 4 armor
         List<ItemStack> result = new ArrayList<>(41 + (includeCursor ? 1 : 0));
         if (includeCursor) {
             result.add(StorageHelper.getItemStackInCursorSlot());
         }
-        result.addAll(inv.main);
-        result.addAll(inv.armor);
-        result.addAll(inv.offHand);
+        result.addAll(inv.getNonEquipmentItems());
+        result.add(player.getItemBySlot(EquipmentSlot.HEAD));
+        result.add(player.getItemBySlot(EquipmentSlot.CHEST));
+        result.add(player.getItemBySlot(EquipmentSlot.LEGS));
+        result.add(player.getItemBySlot(EquipmentSlot.FEET));
+        result.add(player.getItemBySlot(EquipmentSlot.OFFHAND));
         return result;
     }
 
@@ -105,15 +108,15 @@ public class InventorySubTracker extends Tracker {
             ItemStack stackToAddTo = StorageHelper.getItemStackInSlot(toCheckStackable);
             // We must have SOME room left, then we decide whether we care about having ENOUGH
             if (!stackToAddTo.isEmpty() && ItemHelper.canStackTogether(item, stackToAddTo)) {
-                int roomLeft = stackToAddTo.getMaxCount() - stackToAddTo.getCount();
+                int roomLeft = stackToAddTo.getMaxStackSize() - stackToAddTo.getCount();
                 if (acceptPartial || roomLeft > item.getCount()) {
                     result.add(toCheckStackable);
                 }
             }
         }
         // Then add air slots that can insert our item
-        if (MinecraftClient.getInstance().player != null) {
-            ScreenHandler handler = MinecraftClient.getInstance().player.currentScreenHandler;
+        if (Minecraft.getInstance().player != null) {
+            AbstractContainerMenu handler = Minecraft.getInstance().player.containerMenu;
             for (Slot airSlot : list.getOrDefault(Items.AIR, Collections.emptyList())) {
                 // Ignore cursor slot
                 if (airSlot.equals(CursorSlot.SLOT))
@@ -124,7 +127,7 @@ public class InventorySubTracker extends Tracker {
                     continue;
                 }
                 // Special case: Armor/shield, we wish to ignore these slots our inventory is not open.
-                if (windowCheck < handler.slots.size() && handler.getSlot(windowCheck).canInsert(item)) {
+                if (windowCheck < handler.slots.size() && handler.getSlot(windowCheck).mayPlace(item)) {
                     result.add(airSlot);
                 }
             }
@@ -171,15 +174,15 @@ public class InventorySubTracker extends Tracker {
 
     @Override
     protected void updateState() {
-        _prevScreenHandler = MinecraftClient.getInstance().player != null? MinecraftClient.getInstance().player.currentScreenHandler : null;
+        _prevScreenHandler = Minecraft.getInstance().player != null? Minecraft.getInstance().player.containerMenu : null;
 
         _itemToSlotPlayer.clear();
         _itemToSlotContainer.clear();
         _itemCountsPlayer.clear();
         _itemCountsContainer.clear();
-        if (MinecraftClient.getInstance().player == null)
+        if (Minecraft.getInstance().player == null)
             return;
-        ScreenHandler handler = MinecraftClient.getInstance().player.currentScreenHandler;
+        AbstractContainerMenu handler = Minecraft.getInstance().player.containerMenu;
         if (handler == null)
             return;
         for (Slot slot : Slot.getCurrentScreenSlots()) {
@@ -205,7 +208,7 @@ public class InventorySubTracker extends Tracker {
 
     @Override
     protected boolean isDirty() {
-        ScreenHandler handler = MinecraftClient.getInstance().player != null? MinecraftClient.getInstance().player.currentScreenHandler : null;
+        AbstractContainerMenu handler = Minecraft.getInstance().player != null? Minecraft.getInstance().player.containerMenu : null;
         return super.isDirty() || handler != _prevScreenHandler;
     }
 

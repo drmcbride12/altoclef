@@ -4,9 +4,8 @@ import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.util.MiningRequirement;
 import adris.altoclef.util.helpers.StorageHelper;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.HashMap;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Sometimes we will try to access something and fail TOO many times.
@@ -27,7 +26,7 @@ public abstract class AbstractObjectBlacklist<T> {
             _entries.put(item, entry);
         }
         BlacklistEntry entry = _entries.get(item);
-        double newDistance = getPos(item).squaredDistanceTo(mod.getPlayer().getPos());
+        double newDistance = getPos(item).distanceToSqr(mod.getPlayer().position());
         MiningRequirement newTool = StorageHelper.getCurrentMiningRequirement(mod);
         // For distance, add a slight threshold so it doesn't reset EVERY time we move a tiny bit closer.
         if (newTool.ordinal() > entry.bestTool.ordinal() || (newDistance < entry.bestDistanceSq - 1)) {
@@ -41,7 +40,7 @@ public abstract class AbstractObjectBlacklist<T> {
         Debug.logMessage("Blacklist: " + item.toString() + ": Try " + entry.numberOfFailures + " / " + entry.numberOfFailuresAllowed);
     }
 
-    protected abstract Vec3d getPos(T item);
+    protected abstract Vec3 getPos(T item);
 
     public boolean unreachable(T item) {
         if (_entries.containsKey(item)) {

@@ -2,20 +2,21 @@ package adris.altoclef.util.helpers;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.util.WoodType;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.LeavesBlock;
-import net.minecraft.block.MapColor;
-import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.tag.BlockTags;
-import net.minecraft.tag.TagKey;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.registry.Registry;
 import java.util.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.material.MapColor;
 
 /**
  * Helper functions and definitions for useful groupings of items
@@ -25,11 +26,11 @@ public class ItemHelper {
     public static String stripItemName(Item item) {
         String[] possibilities = new String[]{"item.minecraft.", "block.minecraft."};
         for (String possible : possibilities) {
-            if (item.getTranslationKey().startsWith(possible)) {
-                return item.getTranslationKey().substring(possible.length());
+            if (item.getDescriptionId().startsWith(possible)) {
+                return item.getDescriptionId().substring(possible.length());
             }
         }
-        return item.getTranslationKey();
+        return item.getDescriptionId();
     }
 
     public static Item[] blocksToItems(Block[] blocks) {
@@ -44,7 +45,7 @@ public class ItemHelper {
         ArrayList<Block> result = new ArrayList<>();
         for (Item item : items) {
             if (item instanceof BlockItem) {
-                Block b = Block.getBlockFromItem(item);
+                Block b = Block.byItem(item);
                 if (b != null && b != Blocks.AIR) {
                     result.add(b);
                 }
@@ -281,7 +282,7 @@ public class ItemHelper {
                 // BlockTags.LEAVES); should also work... but is slower
                 b instanceof LeavesBlock
                         || b == Blocks.COBWEB
-                        || b == Blocks.GRASS
+                        || b == Blocks.SHORT_GRASS
                         || b == Blocks.TALL_GRASS
                         || b == Blocks.LILY_PAD
                         || b == Blocks.FERN
@@ -293,7 +294,7 @@ public class ItemHelper {
     }
 
     public static boolean isOfBlockType(Block b, TagKey<Block> tag) {
-        return Registry.BLOCK.getKey(b).map(e -> Registry.BLOCK.entryOf(e).streamTags().anyMatch(t -> t == tag)).orElse(false);
+        return BuiltInRegistries.BLOCK.wrapAsHolder(b).is(tag);
     }
 
     public static class ColorfulItems {
@@ -379,7 +380,7 @@ public class ItemHelper {
     }
 
     private static boolean isStackProtected(AltoClef mod, ItemStack stack) {
-        if (stack.hasCustomName() && mod.getModSettings().getDontThrowAwayCustomNameItems())
+        if (stack.has(DataComponents.CUSTOM_NAME) && mod.getModSettings().getDontThrowAwayCustomNameItems())
             return true;
         return mod.getBehaviour().isProtected(stack.getItem()) || mod.getModSettings().isImportant(stack.getItem());
     }
@@ -395,23 +396,16 @@ public class ItemHelper {
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean canStackTogether(ItemStack from, ItemStack to) {
-        if (to.isEmpty() && from.getCount() <= from.getMaxCount())
+        if (to.isEmpty() && from.getCount() <= from.getMaxStackSize())
             return true;
-        return to.getItem().equals(from.getItem()) && (from.getCount() + to.getCount() < to.getMaxCount());
+        return to.getItem().equals(from.getItem()) && (from.getCount() + to.getCount() < to.getMaxStackSize());
     }
 
-    private static Map<Item, Integer> _fuelTimeMap = null;
-    private static Map<Item, Integer> getFuelTimeMap() {
-        if (_fuelTimeMap == null) {
-            _fuelTimeMap = AbstractFurnaceBlockEntity.createFuelTimeMap();
-        }
-        return _fuelTimeMap;
-    }
     public static double getFuelAmount(Item... items) {
         double total = 0;
         for (Item item : items) {
-            if (getFuelTimeMap().containsKey(item)) {
-                int timeTicks = getFuelTimeMap().get(item);
+            if (Minecraft.getInstance().level != null) {
+                int timeTicks = Minecraft.getInstance().level.fuelValues().burnDuration(new ItemStack(item));
                 // 300 ticks of wood -> 1.5 operations
                 // 200 ticks -> 1 operation
                 total += (double) timeTicks / 200.0;
@@ -424,7 +418,7 @@ public class ItemHelper {
     }
 
     public static boolean isFuel(Item item) {
-        return getFuelTimeMap().containsKey(item);
+        return Minecraft.getInstance().level != null && Minecraft.getInstance().level.fuelValues().isFuel(new ItemStack(item));
     }
 
 }

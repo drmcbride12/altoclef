@@ -6,10 +6,6 @@ import adris.altoclef.eventbus.EventBus;
 import adris.altoclef.eventbus.events.ChunkLoadEvent;
 import adris.altoclef.eventbus.events.ChunkUnloadEvent;
 import adris.altoclef.util.helpers.WorldHelper;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.EmptyChunk;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +13,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.EmptyLevelChunk;
 
 /**
  * Keeps track of currently loaded chunks. That's it.
@@ -45,11 +44,11 @@ public class SimpleChunkTracker {
     }
 
     public boolean isChunkLoaded(ChunkPos pos) {
-        return !(_mod.getWorld().getChunk(pos.x, pos.z) instanceof EmptyChunk);
+        return !(_mod.getWorld().getChunk(pos.x(), pos.z()) instanceof EmptyLevelChunk);
     }
 
     public boolean isChunkLoaded(BlockPos pos) {
-        return isChunkLoaded(new ChunkPos(pos));
+        return isChunkLoaded(ChunkPos.containing(pos));
     }
 
     public List<ChunkPos> getLoadedChunks() {
@@ -73,9 +72,9 @@ public class SimpleChunkTracker {
     public boolean scanChunk(ChunkPos chunk, Predicate<BlockPos> onBlockStop) {
         if (!isChunkLoaded(chunk)) return false;
         //Debug.logInternal("SCANNED CHUNK " + chunk.toString());
-        for (int xx = chunk.getStartX(); xx <= chunk.getEndX(); ++xx) {
+        for (int xx = chunk.getMinBlockX(); xx <= chunk.getMaxBlockX(); ++xx) {
             for (int yy = WorldHelper.WORLD_FLOOR_Y; yy <= WorldHelper.WORLD_CEILING_Y; ++yy) {
-                for (int zz = chunk.getStartZ(); zz <= chunk.getEndZ(); ++zz) {
+                for (int zz = chunk.getMinBlockZ(); zz <= chunk.getMaxBlockZ(); ++zz) {
                     if (onBlockStop.test(new BlockPos(xx, yy, zz))) return true;
                 }
             }

@@ -1,11 +1,11 @@
 package adris.altoclef.eventbus.events;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class BlockBrokenEvent {
     public BlockPos blockPos;
     public BlockState blockState;
-    public PlayerEntity player;
+    public Player player;
 }

@@ -5,7 +5,7 @@ import adris.altoclef.tasksystem.ITaskRequiresGrounded;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.baritone.GoalFollowEntity;
 import adris.altoclef.util.progresscheck.MovementProgressChecker;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 
 public class GetToEntityTask extends Task implements ITaskRequiresGrounded {
 
@@ -44,7 +44,7 @@ public class GetToEntityTask extends Task implements ITaskRequiresGrounded {
             mod.getClientBaritone().getCustomGoalProcess().setGoalAndPath(new GoalFollowEntity(_entity, _closeEnoughDistance));
         }
 
-        if (mod.getPlayer().isInRange(_entity, _closeEnoughDistance)) {
+        if (mod.getPlayer().closerThan(_entity, _closeEnoughDistance)) {
             _progress.reset();
         }
 
@@ -71,6 +71,6 @@ public class GetToEntityTask extends Task implements ITaskRequiresGrounded {
 
     @Override
     protected String toDebugString() {
-        return "Approach entity " + _entity.getType().getTranslationKey();
+        return "Approach entity " + _entity.getType().getDescriptionId();
     }
 }

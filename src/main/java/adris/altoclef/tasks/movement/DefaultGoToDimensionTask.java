@@ -6,10 +6,9 @@ import adris.altoclef.tasks.construction.compound.ConstructNetherPortalObsidianT
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.Dimension;
 import adris.altoclef.util.helpers.WorldHelper;
-import net.minecraft.block.Blocks;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
 
 /**
  * Some generic tasks require us to go to the nether/overworld/end.
@@ -132,8 +131,8 @@ public class DefaultGoToDimensionTask extends Task {
 
     private boolean netherPortalIsClose(AltoClef mod) {
         if (mod.getBlockTracker().anyFound(Blocks.NETHER_PORTAL)) {
-            Optional<BlockPos> closest = mod.getBlockTracker().getNearestTracking(mod.getPlayer().getPos(), Blocks.NETHER_PORTAL);
-            return closest.isPresent() && closest.get().isWithinDistance(mod.getPlayer().getPos(), 2000);
+            Optional<BlockPos> closest = mod.getBlockTracker().getNearestTracking(mod.getPlayer().position(), Blocks.NETHER_PORTAL);
+            return closest.isPresent() && closest.get().closerToCenterThan(mod.getPlayer().position(), 2000);
         }
         return false;
     }

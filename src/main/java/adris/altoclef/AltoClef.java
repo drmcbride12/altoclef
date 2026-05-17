@@ -25,13 +25,13 @@ import baritone.altoclef.AltoClefSettings;
 import baritone.api.BaritoneAPI;
 import baritone.api.Settings;
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayDeque;
@@ -80,7 +80,7 @@ public class AltoClef implements ModInitializer {
 
     // Are we in game (playing in a server/world)
     public static boolean inGame() {
-        return MinecraftClient.getInstance().player != null && MinecraftClient.getInstance().getNetworkHandler() != null;
+        return Minecraft.getInstance().player != null && Minecraft.getInstance().getConnection() != null;
     }
 
     @Override
@@ -165,7 +165,7 @@ public class AltoClef implements ModInitializer {
         // Tick with the client
         EventBus.subscribe(ClientTickEvent.class, evt -> onClientTick());
         // Render
-        EventBus.subscribe(ClientRenderEvent.class, evt -> onClientRenderOverlay(evt.stack));
+        EventBus.subscribe(ClientRenderEvent.class, evt -> onClientRenderOverlay(evt.graphics));
 
         // Playground
         Playground.IDLE_TEST_INIT_FUNCTION(this);
@@ -204,8 +204,8 @@ public class AltoClef implements ModInitializer {
         _inputControls.onTickPost();
     }
 
-    private void onClientRenderOverlay(MatrixStack matrixStack) {
-        _commandStatusOverlay.render(this, matrixStack);
+    private void onClientRenderOverlay(GuiGraphicsExtractor graphics) {
+        _commandStatusOverlay.render(this, graphics);
     }
 
     /// GETTERS AND SETTERS
@@ -371,22 +371,22 @@ public class AltoClef implements ModInitializer {
     /**
      * Minecraft player client access (could just be static honestly)
      */
-    public ClientPlayerEntity getPlayer() {
-        return MinecraftClient.getInstance().player;
+    public LocalPlayer getPlayer() {
+        return Minecraft.getInstance().player;
     }
 
     /**
      * Minecraft world access (could just be static honestly)
      */
-    public ClientWorld getWorld() {
-        return MinecraftClient.getInstance().world;
+    public ClientLevel getWorld() {
+        return Minecraft.getInstance().level;
     }
 
     /**
      * Minecraft client interaction controller access (could just be static honestly)
      */
-    public ClientPlayerInteractionManager getController() {
-        return MinecraftClient.getInstance().interactionManager;
+    public MultiPlayerGameMode getController() {
+        return Minecraft.getInstance().gameMode;
     }
 
     /**

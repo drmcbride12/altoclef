@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "altoclef",
-  "version": "0.4.1a",
+  "version": "${version}",
   "name": "Alto Clef",
   "description": "Plays Block Game",
   "authors": [
@@ -9,8 +9,8 @@
     "James Green"
   ],
   "contact": {
-    "homepage": "https://fabricc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "https://github.com/drmcbride12/altoclef",
+    "sources": "https://github.com/drmcbride12/altoclef"
   },
   "license": "CC0-1.0",
   "icon": "assets/altoclef/icon.png",
@@ -22,5 +22,10 @@
   },
   "mixins": [
     "altoclef.mixins.json"
-  ]
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.2",
+    "minecraft": "26.1.2",
+    "java": ">=25"
+  }
 }

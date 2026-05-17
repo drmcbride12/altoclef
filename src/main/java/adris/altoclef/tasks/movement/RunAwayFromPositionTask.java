@@ -4,9 +4,8 @@ import adris.altoclef.AltoClef;
 import adris.altoclef.tasksystem.Task;
 import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.goals.GoalRunAway;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.Arrays;
+import net.minecraft.core.BlockPos;
 
 public class RunAwayFromPositionTask extends CustomBaritoneGoalTask {
 

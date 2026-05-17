@@ -1,7 +1,7 @@
 package adris.altoclef.eventbus.events;
 
 import adris.altoclef.util.slots.Slot;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class SlotClickChangedEvent {
     public Slot slot;

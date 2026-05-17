@@ -6,16 +6,14 @@ import adris.altoclef.tasks.ResourceTask;
 import adris.altoclef.tasks.construction.DestroyBlockTask;
 import adris.altoclef.tasks.movement.SearchWithinBiomeTask;
 import adris.altoclef.tasksystem.Task;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.CocoaBlock;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.BiomeKeys;
-
 import java.util.HashSet;
 import java.util.function.Predicate;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CocoaBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class CollectCocoaBeansTask extends ResourceTask {
     private final int _count;
@@ -45,7 +43,7 @@ public class CollectCocoaBeansTask extends ResourceTask {
             }
 
             BlockState s = mod.getWorld().getBlockState(blockPos);
-            boolean mature = s.get(CocoaBlock.AGE) == 2;
+            boolean mature = s.getValue(CocoaBlock.AGE) == 2;
             if (_wasFullyGrown.contains(blockPos)) {
                 if (!mature) _wasFullyGrown.remove(blockPos);
             } else {
@@ -67,7 +65,7 @@ public class CollectCocoaBeansTask extends ResourceTask {
 
         // Search for jungles
         setDebugState("Exploring around jungles");
-        return new SearchWithinBiomeTask(BiomeKeys.JUNGLE);
+        return new SearchWithinBiomeTask(Biomes.JUNGLE);
     }
 
     @Override

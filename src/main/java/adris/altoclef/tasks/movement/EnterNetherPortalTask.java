@@ -6,11 +6,10 @@ import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.Dimension;
 import adris.altoclef.util.time.TimerGame;
 import adris.altoclef.util.helpers.WorldHelper;
-import net.minecraft.block.Blocks;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.Objects;
 import java.util.function.Predicate;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
 
 public class EnterNetherPortalTask extends Task {
 
@@ -61,7 +60,7 @@ public class EnterNetherPortalTask extends Task {
             return _wanderTask;
         }
 
-        if (mod.getWorld().getBlockState(mod.getPlayer().getBlockPos()).getBlock() == Blocks.NETHER_PORTAL) {
+        if (mod.getWorld().getBlockState(mod.getPlayer().blockPosition()).getBlock() == Blocks.NETHER_PORTAL) {
 
             if (_portalTimeout.elapsed() && !_leftPortal) {
                 return _wanderTask;
@@ -78,7 +77,7 @@ public class EnterNetherPortalTask extends Task {
                 // Eh just assume it's good for now
                 return true;
             }
-            BlockPos below = blockPos.down();
+            BlockPos below = blockPos.below();
             boolean canStand = WorldHelper.isSolid(mod, below) && !mod.getBlockTracker().blockIsValid(below, Blocks.NETHER_PORTAL);
             return canStand && _goodPortal.test(blockPos);
         };

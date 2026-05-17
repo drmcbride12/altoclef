@@ -6,11 +6,10 @@ import adris.altoclef.eventbus.EventBus;
 import adris.altoclef.eventbus.Subscription;
 import adris.altoclef.eventbus.events.ChunkLoadEvent;
 import adris.altoclef.tasksystem.Task;
-import net.minecraft.util.math.ChunkPos;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.world.level.ChunkPos;
 
 /**
  * Searches/explores a continuous "blob" of chunks, attempting to load in ALL nearby chunks that are part of this "blob"

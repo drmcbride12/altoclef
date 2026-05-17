@@ -6,9 +6,8 @@ import adris.altoclef.tasks.entity.KillEntitiesTask;
 import adris.altoclef.tasks.movement.TimeoutWanderTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.ItemTarget;
-import net.minecraft.entity.Entity;
-
 import java.util.function.Predicate;
+import net.minecraft.world.entity.Entity;
 
 public class KillAndLootTask extends ResourceTask {
 

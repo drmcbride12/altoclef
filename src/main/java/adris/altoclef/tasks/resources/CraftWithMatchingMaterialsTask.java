@@ -10,7 +10,7 @@ import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.CraftingRecipe;
 import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.RecipeTarget;
-import net.minecraft.item.Item;
+import net.minecraft.world.item.Item;
 
 public abstract class CraftWithMatchingMaterialsTask extends ResourceTask {
 

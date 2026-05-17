@@ -1,8 +1,7 @@
 package adris.altoclef.tasks.entity;
 
-import net.minecraft.entity.Entity;
-
 import java.util.function.Predicate;
+import net.minecraft.world.entity.Entity;
 
 /**
  * Kill all entities of a type

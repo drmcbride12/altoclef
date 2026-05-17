@@ -16,10 +16,9 @@ import baritone.api.pathing.goals.GoalBlock;
 import baritone.api.pathing.goals.GoalNear;
 import baritone.api.utils.Rotation;
 import baritone.api.utils.input.Input;
-import net.minecraft.block.Blocks;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
 
 /**
  * Destroy a block at a position.
@@ -47,7 +46,7 @@ public class DestroyBlockTask extends Task implements ITaskRequiresGrounded {
 
         mod.getBehaviour().push();
         // Avoid placing on top, to prevent our annoying "run away" bug
-        mod.getBehaviour().avoidBlockPlacing(pos -> _pos.up().equals(pos));
+        mod.getBehaviour().avoidBlockPlacing(pos -> _pos.above().equals(pos));
     }
 
     @Override
@@ -66,7 +65,7 @@ public class DestroyBlockTask extends Task implements ITaskRequiresGrounded {
         }
 
         // do NOT break if we're standing above it and it's dangerous below...
-        if (!WorldHelper.isSolid(mod, _pos.up()) && mod.getPlayer().getPos().y > _pos.getY() && _pos.isWithinDistance(mod.getPlayer().isOnGround()? mod.getPlayer().getPos() : mod.getPlayer().getPos().add(0, -1, 0), 0.89)) {
+        if (!WorldHelper.isSolid(mod, _pos.above()) && mod.getPlayer().position().y > _pos.getY() && _pos.closerToCenterThan(mod.getPlayer().onGround()? mod.getPlayer().position() : mod.getPlayer().position().add(0, -1, 0), 0.89)) {
             if (WorldHelper.dangerousToBreakIfRightAbove(mod, _pos)) {
                 setDebugState("It's dangerous to break as we're right above it, moving away and trying again.");
                 return new RunAwayFromPositionTask(3, _pos.getY(), _pos);
@@ -79,7 +78,7 @@ public class DestroyBlockTask extends Task implements ITaskRequiresGrounded {
             _tryToMineTimer.reset();
         }
         if (!_tryToMineTimer.elapsed()) {
-            if (reach.isPresent() && (mod.getPlayer().isTouchingWater() || mod.getPlayer().isOnGround())) {
+            if (reach.isPresent() && (mod.getPlayer().isInWater() || mod.getPlayer().onGround())) {
                 setDebugState("Block in range, mining...");
                 // Break the block, force it.
                 mod.getClientBaritone().getCustomGoalProcess().onLostControl();
@@ -102,7 +101,7 @@ public class DestroyBlockTask extends Task implements ITaskRequiresGrounded {
             }
         } else {
             setDebugState("Getting to block...");
-            boolean isClose = _pos.isWithinDistance(mod.getPlayer().getPos(), 1);
+            boolean isClose = _pos.closerToCenterThan(mod.getPlayer().position(), 1);
             if (isClose != _wasClose) {
                 mod.getClientBaritone().getCustomGoalProcess().onLostControl();
                 _wasClose = isClose;

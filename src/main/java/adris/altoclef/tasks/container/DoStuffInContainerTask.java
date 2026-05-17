@@ -15,12 +15,11 @@ import adris.altoclef.util.helpers.ItemHelper;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.helpers.WorldHelper;
 import adris.altoclef.util.slots.Slot;
-import net.minecraft.block.Block;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.Arrays;
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.Vec3;
 
 
 /**
@@ -81,7 +80,7 @@ public abstract class DoStuffInContainerTask extends Task {
 
         Optional<BlockPos> nearest;
 
-        Vec3d currentPos = mod.getPlayer().getPos();
+        Vec3 currentPos = mod.getPlayer().position();
         BlockPos override = overrideContainerPosition(mod);
 
         if (override != null && mod.getBlockTracker().blockIsValid(override, _containerBlocks)) {

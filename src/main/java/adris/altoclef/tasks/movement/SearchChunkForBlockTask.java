@@ -2,12 +2,12 @@ package adris.altoclef.tasks.movement;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.tasksystem.Task;
-import net.minecraft.block.Block;
-import net.minecraft.util.math.ChunkPos;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Block;
 
 public class SearchChunkForBlockTask extends SearchChunksExploreTask {
 

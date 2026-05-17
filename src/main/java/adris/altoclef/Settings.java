@@ -14,15 +14,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.Streams;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 
 /**
  * The settings file, loaded and used across the codebase.
@@ -423,7 +422,7 @@ public class Settings implements IFailableConfigFile {
 
 
     private static boolean idArrayContainsItem(Item item, int[] ids) {
-        int id = Item.getRawId(item);
+        int id = Item.getId(item);
         for (int check : ids) {
             if (check == id) return true;
         }

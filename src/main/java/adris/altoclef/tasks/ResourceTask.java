@@ -18,16 +18,16 @@ import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.helpers.WorldHelper;
 import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
-import net.minecraft.block.Block;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.item.Item;
-import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 
 /**
  * The parent for all "collect an item" tasks.
@@ -117,15 +117,15 @@ public abstract class ResourceTask extends Task implements ITaskCanForce {
                         return _pickupTask;
                     }
                     // Only get items that are CLOSE to us.
-                    Optional<ItemEntity> closest = mod.getEntityTracker().getClosestItemDrop(mod.getPlayer().getPos(), _itemTargets);
-                    if (closest.isPresent() && !closest.get().isInRange(mod.getPlayer(), 10)) {
+                    Optional<ItemEntity> closest = mod.getEntityTracker().getClosestItemDrop(mod.getPlayer().position(), _itemTargets);
+                    if (closest.isPresent() && !closest.get().closerThan(mod.getPlayer(), 10)) {
                         return onResourceTick(mod);
                     }
                 }
 
                 double range = mod.getModSettings().getResourcePickupRange();
-                Optional<ItemEntity> closest = mod.getEntityTracker().getClosestItemDrop(mod.getPlayer().getPos(), _itemTargets);
-                if (range < 0 || (closest.isPresent() && closest.get().isInRange(mod.getPlayer(), range)) || (_pickupTask.isActive() && !_pickupTask.isFinished(mod))) {
+                Optional<ItemEntity> closest = mod.getEntityTracker().getClosestItemDrop(mod.getPlayer().position(), _itemTargets);
+                if (range < 0 || (closest.isPresent() && closest.get().closerThan(mod.getPlayer(), range)) || (_pickupTask.isActive() && !_pickupTask.isFinished(mod))) {
                     setDebugState("Picking up");
                     return _pickupTask;
                 }
@@ -136,8 +136,8 @@ public abstract class ResourceTask extends Task implements ITaskCanForce {
         if (_currentContainer == null) {
             List<ContainerCache> containersWithItem = mod.getItemStorage().getContainersWithItem(Arrays.stream(_itemTargets).reduce(new Item[0], (items, target) -> ArrayUtils.addAll(items, target.getMatches()), ArrayUtils::addAll));
             if (!containersWithItem.isEmpty()) {
-                ContainerCache closest = containersWithItem.stream().min(StlHelper.compareValues(container -> container.getBlockPos().getSquaredDistance(mod.getPlayer().getPos()))).get();
-                if (closest.getBlockPos().isWithinDistance(mod.getPlayer().getPos(), mod.getModSettings().getResourceChestLocateRange())) {
+                ContainerCache closest = containersWithItem.stream().min(StlHelper.compareValues(container -> container.getBlockPos().distToCenterSqr(mod.getPlayer().position()))).get();
+                if (closest.getBlockPos().closerToCenterThan(mod.getPlayer().position(), mod.getModSettings().getResourceChestLocateRange())) {
                     _currentContainer = closest;
                 }
             }
@@ -163,12 +163,12 @@ public abstract class ResourceTask extends Task implements ITaskCanForce {
             satisfiedReqs.removeIf(block -> !StorageHelper.miningRequirementMet(mod, MiningRequirement.getMinimumRequirementForBlock(block)));
             if (!satisfiedReqs.isEmpty()) {
                 if (mod.getBlockTracker().anyFound(satisfiedReqs.toArray(Block[]::new))) {
-                    Optional<BlockPos> closest = mod.getBlockTracker().getNearestTracking(mod.getPlayer().getPos(), _mineIfPresent);
-                    if (closest.isPresent() && closest.get().isWithinDistance(mod.getPlayer().getPos(), mod.getModSettings().getResourceMineRange())) {
+                    Optional<BlockPos> closest = mod.getBlockTracker().getNearestTracking(mod.getPlayer().position(), _mineIfPresent);
+                    if (closest.isPresent() && closest.get().closerToCenterThan(mod.getPlayer().position(), mod.getModSettings().getResourceMineRange())) {
                         _mineLastClosest = closest.get();
                     }
                     if (_mineLastClosest != null) {
-                        if (_mineLastClosest.isWithinDistance(mod.getPlayer().getPos(), mod.getModSettings().getResourceMineRange() * 1.5 + 20)) {
+                        if (_mineLastClosest.closerToCenterThan(mod.getPlayer().position(), mod.getModSettings().getResourceMineRange() * 1.5 + 20)) {
                             return new MineAndCollectTask(_itemTargets, _mineIfPresent, MiningRequirement.HAND);
                         }
                     }

@@ -12,10 +12,9 @@ import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.slots.CraftingTableSlot;
 import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
-import net.minecraft.item.ItemStack;
-
 import java.util.Arrays;
 import java.util.Optional;
+import net.minecraft.world.item.ItemStack;
 
 public class CraftGenericWithRecipeBooksTask extends Task implements ITaskUsesCraftingGrid {
 

@@ -1,9 +1,8 @@
 package adris.altoclef.util.slots;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.EquipmentSlot;
-
 import java.util.stream.IntStream;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.EquipmentSlot;
 
 public class PlayerSlot extends Slot {
     public static final PlayerSlot CRAFT_OUTPUT_SLOT = new PlayerSlot(0);
@@ -41,8 +40,8 @@ public class PlayerSlot extends Slot {
     public static Slot getEquipSlot(EquipmentSlot equipSlot) {
         switch (equipSlot) {
             case MAINHAND:
-                assert MinecraftClient.getInstance().player != null;
-                return Slot.getFromCurrentScreenInventory(MinecraftClient.getInstance().player.getInventory().selectedSlot);
+                assert Minecraft.getInstance().player != null;
+                return Slot.getFromCurrentScreenInventory(Minecraft.getInstance().player.getInventory().getSelectedSlot());
             case OFFHAND:
                 return OFFHAND_SLOT;
             case FEET:

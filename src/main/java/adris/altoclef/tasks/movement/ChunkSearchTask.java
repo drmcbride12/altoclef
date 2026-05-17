@@ -6,15 +6,14 @@ import adris.altoclef.eventbus.EventBus;
 import adris.altoclef.eventbus.Subscription;
 import adris.altoclef.eventbus.events.ChunkLoadEvent;
 import adris.altoclef.tasksystem.Task;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.chunk.WorldChunk;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Use to walk through and search interconnected structures or biomes.
@@ -44,7 +43,7 @@ abstract class ChunkSearchTask extends Task {
     }
 
     public ChunkSearchTask(ChunkPos chunkPos) {
-        this(chunkPos.getStartPos().add(1, 1, 1));
+        this(chunkPos.getWorldPosition().offset(1, 1, 1));
     }
 
     public Set<ChunkPos> getSearchedChunks() {
@@ -69,7 +68,7 @@ abstract class ChunkSearchTask extends Task {
         }
 
         _onChunkLoad = EventBus.subscribe(ChunkLoadEvent.class, evt -> {
-            WorldChunk chunk = evt.chunk;
+            LevelChunk chunk = evt.chunk;
             if (chunk == null) return;
             synchronized (_searchMutex) {
                 if (!_searchedAlready.contains(chunk.getPos())) {
@@ -117,10 +116,10 @@ abstract class ChunkSearchTask extends Task {
         double lowestScore = Double.POSITIVE_INFINITY;
         ChunkPos bestChunk = null;
         for (ChunkPos toSearch : chunks) {
-            double cx = (toSearch.getStartX() + toSearch.getEndX() + 1) / 2.0, cz = (toSearch.getStartZ() + toSearch.getEndZ() + 1) / 2.0;
+            double cx = (toSearch.getMinBlockX() + toSearch.getMaxBlockX() + 1) / 2.0, cz = (toSearch.getMinBlockZ() + toSearch.getMaxBlockZ() + 1) / 2.0;
             double px = mod.getPlayer().getX(), pz = mod.getPlayer().getZ();
             double distanceSq = (cx - px) * (cx - px) + (cz - pz) * (cz - pz);
-            double distanceToCenterSq = new Vec3d(_startPoint.getX() - cx, 0, _startPoint.getZ() - cz).lengthSquared();
+            double distanceToCenterSq = new Vec3(_startPoint.getX() - cx, 0, _startPoint.getZ() - cz).lengthSqr();
             double score = distanceSq + distanceToCenterSq * 0.8;
             if (score < lowestScore) {
                 lowestScore = score;
@@ -180,10 +179,10 @@ abstract class ChunkSearchTask extends Task {
             _searchedAlready.add(pos);
             if (isChunkPartOfSearchSpace(mod, pos)) {
                 // This chunk may lead to more, so either search or enqueue its neighbors.
-                searchChunkOrQueueSearch(mod, new ChunkPos(pos.x + 1, pos.z));
-                searchChunkOrQueueSearch(mod, new ChunkPos(pos.x - 1, pos.z));
-                searchChunkOrQueueSearch(mod, new ChunkPos(pos.x, pos.z + 1));
-                searchChunkOrQueueSearch(mod, new ChunkPos(pos.x, pos.z - 1));
+                searchChunkOrQueueSearch(mod, new ChunkPos(pos.x() + 1, pos.z()));
+                searchChunkOrQueueSearch(mod, new ChunkPos(pos.x() - 1, pos.z()));
+                searchChunkOrQueueSearch(mod, new ChunkPos(pos.x(), pos.z() + 1));
+                searchChunkOrQueueSearch(mod, new ChunkPos(pos.x(), pos.z() - 1));
             }
             return true;
         }

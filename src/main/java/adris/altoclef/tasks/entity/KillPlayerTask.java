@@ -5,9 +5,8 @@ import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.progresscheck.IProgressChecker;
 import adris.altoclef.util.progresscheck.LinearProgressChecker;
 import adris.altoclef.util.progresscheck.ProgressCheckerRetry;
-import net.minecraft.entity.Entity;
-
 import java.util.Optional;
+import net.minecraft.world.entity.Entity;
 
 /**
  * Kill a player given their username
@@ -30,7 +29,7 @@ public class KillPlayerTask extends AbstractKillEntityTask {
         if (player.isEmpty()) {
             _distancePlayerCheck.reset();
         } else {
-            double distSq = player.get().squaredDistanceTo(mod.getPlayer());
+            double distSq = player.get().distanceToSqr(mod.getPlayer());
             if (distSq < 10 * 10) {
                 _distancePlayerCheck.reset();
             }

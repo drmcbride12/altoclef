@@ -8,14 +8,13 @@ import adris.altoclef.trackers.storage.ContainerCache;
 import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.slots.Slot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.ItemStack;
 
 public class PickupFromContainerTask extends AbstractDoToStorageContainerTask {
 

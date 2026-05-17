@@ -7,13 +7,12 @@ import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.helpers.StlHelper;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.slots.Slot;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 public class MoveItemToSlotTask extends Task {
 
@@ -65,7 +64,7 @@ public class MoveItemToSlotTask extends Task {
                     }
                 }
                 if (toPlace.isEmpty()) {
-                    Debug.logError("Called MoveItemToSlotTask when item/not enough item is available! valid items: " + StlHelper.toString(validItems, Item::getTranslationKey));
+                    Debug.logError("Called MoveItemToSlotTask when item/not enough item is available! valid items: " + StlHelper.toString(validItems, Item::getDescriptionId));
                     return null;
                 }
                 return new ClickSlotTask(toPlace.get());
