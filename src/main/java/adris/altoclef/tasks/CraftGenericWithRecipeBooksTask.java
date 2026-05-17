@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 public class CraftGenericWithRecipeBooksTask extends Task implements ITaskUsesCraftingGrid {
 
     private final RecipeTarget _target;
+    private boolean _recipeBookFailed;
 
     public CraftGenericWithRecipeBooksTask(RecipeTarget target) {
         _target = target;
@@ -78,9 +79,17 @@ public class CraftGenericWithRecipeBooksTask extends Task implements ITaskUsesCr
         }
 
         // Request to fill in a recipe. Just piggy back off of the slot delay system.
+        if (_recipeBookFailed) {
+            setDebugState("Recipe book unavailable, crafting manually.");
+            return new CraftGenericManuallyTask(_target);
+        }
+
         if (mod.getSlotHandler().canDoSlotAction()) {
             mod.getSlotHandler().registerSlotAction();
-            StorageHelper.instantFillRecipeViaBook(mod, _target.getRecipe(), _target.getOutputItem(), true);
+            if (!StorageHelper.instantFillRecipeViaBook(mod, _target.getRecipe(), _target.getOutputItem(), true)) {
+                _recipeBookFailed = true;
+                return new CraftGenericManuallyTask(_target);
+            }
         }
 
 

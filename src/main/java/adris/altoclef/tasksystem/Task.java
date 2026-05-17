@@ -175,11 +175,8 @@ public abstract class Task {
     private boolean canBeInterrupted(AltoClef mod, Task subTask, Task toInterruptWith) {
         if (subTask == null) return true;
         // Our task can declare that is FORCES itself to be active NOW.
-        return (subTask.thisOrChildSatisfies(task -> {
-            if (task instanceof ITaskCanForce canForce) {
-                return !canForce.shouldForce(mod, toInterruptWith);
-            }
-            return true;
-        }));
+        return !subTask.thisOrChildSatisfies(task ->
+                task instanceof ITaskCanForce canForce && canForce.shouldForce(mod, toInterruptWith)
+        );
     }
 }

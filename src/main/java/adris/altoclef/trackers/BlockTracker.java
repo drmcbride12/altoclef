@@ -12,6 +12,7 @@ import adris.altoclef.util.helpers.ConfigHelper;
 import adris.altoclef.util.helpers.WorldHelper;
 import adris.altoclef.util.helpers.StlHelper;
 import baritone.Baritone;
+import baritone.api.BaritoneAPI;
 import baritone.api.utils.BlockOptionalMetaLookup;
 import baritone.pathing.movement.CalculationContext;
 import baritone.process.MineProcess;
@@ -350,9 +351,16 @@ public class BlockTracker extends Tracker {
             }
         }
 
-        // The scanning may run asynchronously.
+        // The scanning may run asynchronously. Prefer live chunk scans here: the persistent Baritone
+        // cache can contain stale locations from older worlds, which makes AltoClef chase fake beds.
         BlockOptionalMetaLookup boml = new BlockOptionalMetaLookup(blocksToScan);
-        List<BlockPos> found = MineProcess.searchWorld(ctx, boml, _config.maxCacheSizePerBlockType, Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        List<BlockPos> found = BaritoneAPI.getProvider().getWorldScanner().scanChunkRadius(
+                _mod.getClientBaritone().getPlayerContext(),
+                boml,
+                _config.maxCacheSizePerBlockType,
+                10,
+                32
+        );
 
         synchronized (_scanMutex) {
             if (Minecraft.getInstance().level != null) {

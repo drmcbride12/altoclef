@@ -14,16 +14,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Level.class)
 public class WorldBlockModifiedMixin {
 
-    private static boolean hasBlock(BlockState state, BlockPos pos) {
-        return !state.isAir() && state.isRedstoneConductor(Minecraft.getInstance().level, pos);
+    private static boolean hasBlock(Level level, BlockState state, BlockPos pos) {
+        return !state.isAir() && state.isRedstoneConductor(level, pos);
     }
 
     @Inject(
             method = "setBlocksDirty",
-            at = @At("HEAD")
+            at = @At("TAIL")
     )
     public void onBlockWasChanged(BlockPos pos, BlockState oldBlock, BlockState newBlock, CallbackInfo ci) {
-        if (!hasBlock(oldBlock, pos) && hasBlock(newBlock, pos)) {
+        Level level = (Level) (Object) this;
+        if (!level.isClientSide() || Minecraft.getInstance().level != level) {
+            return;
+        }
+        if (!hasBlock(level, oldBlock, pos) && hasBlock(level, newBlock, pos)) {
             BlockPlaceEvent evt = new BlockPlaceEvent(pos, newBlock);
             EventBus.publish(evt);
         }

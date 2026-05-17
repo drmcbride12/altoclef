@@ -1,67 +1,83 @@
-# altoclef
+# AltoClef
 
-Plays block game.
+AltoClef is a Fabric client-side Minecraft bot powered by Baritone. This fork is now focused on keeping AltoClef alive on current Minecraft versions, with the active target updated to **Minecraft 26.1.2**.
 
-Powered by Baritone.
+The goal is simple: make AltoClef usable again, keep the autonomous task system working, and continue improving the `@gamer` beat-the-game flow on modern Minecraft.
 
-A client side bot that can accomplish any Minecraft task that is relatively simple and can be split into smaller tasks. "Relatively Simple" is a vague term, so check the list of current capabilities to see examples.
+## Current Status
 
-Became [the first bot to beat Minecraft fully autonomously](https://youtu.be/baAa6s8tahA) on May 24, 2021.
+- Minecraft target: **26.1.2**
+- Fabric Loader: **0.19.2**
+- Fabric API: **0.149.0+26.1.2**
+- Java: **25**
+- Build artifact: `build/libs/altoclef-0.4.0+26.1.2.jar`
 
-**Join the [Discord Server](https://discord.gg/JdFP4Kqdqc)** for discussions/updates/goofs & gaffs
+This fork includes the Minecraft 26.1.2 port work, bundled Baritone runtime updates, modern Fabric setup, and runtime fixes for startup, world loading, pathing, crafting, projectile tracking, and death waypoint handling.
 
-## How it works
+## What It Does
 
-Take a look at this [Guide from the wiki](https://github.com/gaucho-matrero/altoclef/wiki/1:-Documentation:-Big-Picture) or this [Video explanation](https://youtu.be/q5OmcinQ2ck?t=387)
+AltoClef breaks large goals into smaller Minecraft tasks. It can gather resources, craft, mine, pathfind, fight or avoid mobs, use containers, manage inventory, and run high-level objectives from chat commands.
 
-## Current capabilities, Examples:
-- Obtain 400+ Items from a fresh survival world, like diamond armor, cake, and nether brick stairs
-- Dodge mob projectiles and force field mobs away while accomplishing arbitrary tasks
-- Collect + smelt food from animals, hay, & crops
-- Receive commands from chat whispers via /msg. Whitelist + Blacklist configurable (hereby dubbed the Butler System). Here's a [Butler system demo video](https://drive.google.com/file/d/1axVYYMJ5VjmVHaWlCifFHTwiXlFssOUc/view?usp=sharing)
-- Simple config file that can be reloaded via command (check .minecraft directory)
-- Beat the entire game on its own (no user input.)
-- Print the entire bee movie script with signs in a straight line, automatically collecting signs + bridging materials along the way.
-- Become the terminator: Run away from players while unarmed, gather diamond gear in secret, then return and wreak havoc.
+The headline task is still:
 
-## Download
+```text
+@gamer
+```
 
-**Note:** After installing, please move/delete your old baritone configurations if you have any. Preexisting baritone configurations will interfere with altoclef and introduce bugs. This will be fixed in the future.
+That command starts the autonomous beat-the-game task.
 
-### Alternate Versions (Recommended) (Unofficial)
+## Install
 
-If you are looking for 1.19.2 - 1.19.4 support, check out this [gist](https://gist.github.com/JustaSqu1d/171df3ff386859da31d37534122d3b10). Note that these projects are forks of this original project and not directly affliated with Alto Clef. It is also more up-to-date with bug fixes and features.
+1. Install Minecraft **26.1.2** with Fabric Loader **0.19.2**.
+2. Install the matching Fabric API for **26.1.2**.
+3. Build this repo or download a release jar when one is available.
+4. Put `altoclef-0.4.0+26.1.2.jar` in your Minecraft `mods` folder.
+5. Start the game and open a singleplayer world.
 
-#### (old) Nightly Release
+Old Baritone configs can interfere with this bot. If behavior looks strange, clear old Baritone/AltoClef config files from the Minecraft config directory and let this fork regenerate them.
 
-Start by downloading [the Latest Long Term Release](https://github.com/gaucho-matrero/altoclef/releases), then [Download the Nightly](https://nightly.link/gaucho-matrero/altoclef/workflows/gradle/main/Artifacts.zip) & replace `altoclef-4.0-SNAPSHOT.jar`.
+## Commands
 
-If the Nightly Link doesn't work, check the latest [Build Action](https://github.com/gaucho-matrero/altoclef/actions) that succeeded and download `Artifacts.zip` (you must be signed into GitHub). Replace your existing `altoclef-4.0-SNAPSHOT.jar` with the one found in `Artifacts.zip`
+Commands are sent in chat with the AltoClef prefix:
 
-Then, copy `altoclef-4.0-SNAPSHOT.jar` from `Artifacts.zip` to `./mods`.
+```text
+@help
+@gamer
+@stop
+```
 
-Then, copy the `baritone-unoptimized-fabric-1.XX.X.jar` from the long term release zip file to `./mods`
+Use `@gamer` to begin the beat-the-game task from a survival world. Use `@stop` to stop the current task.
 
-#### (old) Long Term Release
+## Build From Source
 
-[Check releases](https://github.com/gaucho-matrero/altoclef/releases). Note you will need to copy over both jar files for the mod to work.
+Use JDK 25, then run:
 
-#### (old) Meloweh's Extra Features Release (Unofficial)
+```powershell
+.\gradlew.bat build
+```
 
-Has some schematic support, command macros and a few utility features. Will eventually be merged, but if you can try it out now if you'd like:
+The jar will be written to:
 
-- [AltoClef jar](https://github.com/Meloweh/altoclef/releases)
-- [Baritone jar](https://github.com/Meloweh/baritone/releases)
+```text
+build/libs/altoclef-0.4.0+26.1.2.jar
+```
 
-### Versions
+## Development Notes
 
-This is a **fabric only** mod, currently only available for **Minecraft 1.18**.
+This is now a maintained modernization fork rather than a historical mirror of the old AltoClef release flow. The old README information about 1.18, nightly builds, and unrelated forks has been removed because it no longer reflects this repo.
 
-For older MC versions, try [multiconnect](https://www.curseforge.com/minecraft/mc-mods/multiconnect) (NOTE: multiconnect is untested and not affiliated with altoclef, use at your own risk!)
+Recent porting work includes:
 
+- Updated Gradle/Fabric configuration for Minecraft 26.1.2.
+- Rebuilt bundled Baritone jars for this fork.
+- Fixed client initialization when loading directly into a world.
+- Fixed multiple renamed or removed Minecraft API usages.
+- Fixed world height handling for modern dimensions.
+- Fixed projectile tracking mixin recursion.
+- Fixed Baritone scanner/cache issues with modern chunk data.
+- Disabled the unstable modern recipe-book crafting path and restored stable manual crafting.
+- Fixed task interruption so in-progress crafting can finish instead of deadlocking.
 
-## [Usage Guide](usage.md)
+## Project Direction
 
-## [TODO's/Future Features](todos.md)
-
-## [Development Guide](develop.md)
+This fork is taking over active maintenance for modern Minecraft support. The priority is practical reliability: keep the bot building, keep the jar runnable, fix runtime crashes as they are found, and improve the full autonomous game-completion path over time.

@@ -22,6 +22,7 @@ import adris.altoclef.util.MiningRequirement;
 import adris.altoclef.util.SmeltTarget;
 import adris.altoclef.util.helpers.ConfigHelper;
 import adris.altoclef.util.helpers.ItemHelper;
+import adris.altoclef.util.helpers.LookHelper;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.helpers.WorldHelper;
 import adris.altoclef.util.time.TimerGame;
@@ -218,8 +219,12 @@ public class BeatMinecraft2Task extends Task {
 
         // Portable crafting table.
         // If we're NOT using our crafting table right now and there's one nearby, grab it.
+        Predicate<BlockPos> reachableCraftingTable = blockPos -> WorldHelper.canBreak(mod, blockPos)
+                && blockPos.closerToCenterThan(mod.getPlayer().position(), 5)
+                && Math.abs(blockPos.getY() - mod.getPlayer().blockPosition().getY()) <= 3
+                && LookHelper.getReach(blockPos).isPresent();
         if (!_endPortalOpened && WorldHelper.getCurrentDimension() != Dimension.END && _config.rePickupCraftingTable && !mod.getItemStorage().hasItem(Items.CRAFTING_TABLE) && !thisOrChildSatisfies(isCraftingTableTask)
-                && (mod.getBlockTracker().anyFound(blockPos -> WorldHelper.canBreak(mod, blockPos), Blocks.CRAFTING_TABLE)
+                && (mod.getBlockTracker().anyFound(reachableCraftingTable, Blocks.CRAFTING_TABLE)
                 || mod.getEntityTracker().itemDropped(Items.CRAFTING_TABLE) )) {
             setDebugState("Pick up crafting table while we're at it");
             return new MineAndCollectTask(Items.CRAFTING_TABLE, 1, new Block[]{Blocks.CRAFTING_TABLE}, MiningRequirement.HAND);

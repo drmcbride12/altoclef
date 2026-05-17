@@ -84,7 +84,7 @@ public class Settings implements IFailableConfigFile {
      *
      * If false, will place items in each slot manually (the original way)
      */
-    private boolean useCraftingBookToCraft = true;
+    private boolean useCraftingBookToCraft = false;
 
     /**
      * If a dropped resource item is further than this from the player, don't pick it up.
@@ -465,7 +465,9 @@ public class Settings implements IFailableConfigFile {
     }
 
     public boolean shouldUseCraftingBookToCraft() {
-        return useCraftingBookToCraft;
+        // The modern recipe book path leaves cursor/grid state inconsistent on
+        // 26.1.2, which can deadlock nested crafting/furnace tasks.
+        return false;
     }
 
     public int getFoodUnitsToCollect() {

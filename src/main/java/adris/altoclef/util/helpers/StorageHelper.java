@@ -613,12 +613,14 @@ public class StorageHelper {
         return results;
     }
 
-    public static void instantFillRecipeViaBook(AltoClef mod, CraftingRecipe recipe, Item output, boolean craftAll) {
+    public static boolean instantFillRecipeViaBook(AltoClef mod, CraftingRecipe recipe, Item output, boolean craftAll) {
         Optional<RecipeDisplayId> recipeToSend = JankCraftingRecipeMapping.getMinecraftMappedRecipe(recipe, output);
         if (recipeToSend.isPresent()) {
             mod.getController().handlePlaceRecipe(Minecraft.getInstance().player.containerMenu.containerId, recipeToSend.get(), craftAll);
+            return true;
         } else {
             Debug.logError("Could not find recipe stored in Minecraft!! Recipe: " + recipe + " with output " + output);
+            return false;
         }
     }
 }

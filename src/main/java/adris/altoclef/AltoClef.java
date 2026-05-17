@@ -25,6 +25,7 @@ import baritone.altoclef.AltoClefSettings;
 import baritone.api.BaritoneAPI;
 import baritone.api.Settings;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -48,6 +49,7 @@ public class AltoClef implements ModInitializer {
 
     // Static access to altoclef
     private static final Queue<Consumer<AltoClef>> _postInitQueue = new ArrayDeque<>();
+    private boolean _initialized = false;
 
     // Central Managers
     private static CommandExecutor _commandExecutor;
@@ -88,12 +90,18 @@ public class AltoClef implements ModInitializer {
         // This code runs as soon as Minecraft is in a mod-load-ready state.
         // However, some things (like resources) may still be uninitialized.
         // As such, nothing will be loaded here but basic initialization.
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> onInitializeLoad());
         EventBus.subscribe(TitleScreenEntryEvent.class, evt -> onInitializeLoad());
     }
 
     public void onInitializeLoad() {
         // This code should be run after Minecraft loads everything else in.
         // This is the actual start point, controlled by a mixin.
+        if (_initialized) {
+            return;
+        }
+        _initialized = true;
+        Debug.logMessage("Global Init");
 
         initializeBaritoneSettings();
 

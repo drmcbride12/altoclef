@@ -36,6 +36,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.ArrayUtils;
+import java.util.function.Predicate;
 
 public class PlaceBedAndSetSpawnTask extends Task {
 
@@ -171,7 +172,10 @@ public class PlaceBedAndSetSpawnTask extends Task {
             }
         }
 
-        if (mod.getBlockTracker().anyFound(BEDS)) {
+        Predicate<BlockPos> nearbyBed = bed -> bed.closerToCenterThan(mod.getPlayer().position(), 8)
+                && Math.abs(bed.getY() - mod.getPlayer().blockPosition().getY()) <= 4
+                && WorldHelper.getBedHead(mod, bed) != null;
+        if (mod.getBlockTracker().anyFound(nearbyBed, BEDS)) {
             // Sleep in the nearest bed
             setDebugState("Going to bed to sleep...");
             return new DoToClosestBlockTask(toSleepIn -> {
@@ -215,7 +219,7 @@ public class PlaceBedAndSetSpawnTask extends Task {
                 // Keep track of where our spawn point is
                 _progressChecker.reset();
                 return new InteractWithBlockTask(_bedForSpawnPoint);
-            }, BEDS);
+            }, nearbyBed, BEDS);
         }
 
         // Get a bed if we don't have one.

@@ -5,6 +5,7 @@ import adris.altoclef.tasks.slot.ClickSlotTask;
 import adris.altoclef.tasks.slot.MoveItemToSlotFromInventoryTask;
 import adris.altoclef.tasks.slot.ReceiveCraftingOutputSlotTask;
 import adris.altoclef.tasks.slot.ThrowCursorTask;
+import adris.altoclef.tasksystem.ITaskCanForce;
 import adris.altoclef.tasksystem.ITaskUsesCraftingGrid;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.ItemTarget;
@@ -23,7 +24,7 @@ import net.minecraft.world.item.Items;
  *
  * Not useful for custom tasks.
  */
-public class CraftGenericManuallyTask extends Task implements ITaskUsesCraftingGrid {
+public class CraftGenericManuallyTask extends Task implements ITaskUsesCraftingGrid, ITaskCanForce {
 
     private final RecipeTarget _target;
 
@@ -128,6 +129,34 @@ public class CraftGenericManuallyTask extends Task implements ITaskUsesCraftingG
     }
 
     @Override
+    public boolean shouldForce(AltoClef mod, Task interruptingCandidate) {
+        boolean bigCrafting = StorageHelper.isBigCraftingOpen();
+        boolean playerCrafting = StorageHelper.isPlayerInventoryOpen();
+        ItemStack cursor = StorageHelper.getItemStackInCursorSlot();
+        if (isRecipeMaterialOrOutput(cursor)) {
+            return true;
+        }
+        if (!bigCrafting && !playerCrafting) {
+            return false;
+        }
+
+        Slot outputSlot = bigCrafting ? CraftingTableSlot.OUTPUT_SLOT : PlayerSlot.CRAFT_OUTPUT_SLOT;
+        if (StorageHelper.getItemStackInSlot(outputSlot).getItem() == _target.getOutputItem()) {
+            return true;
+        }
+
+        for (int craftSlot = 0; craftSlot < _target.getRecipe().getSlotCount(); ++craftSlot) {
+            Slot currentCraftSlot = bigCrafting
+                    ? CraftingTableSlot.getInputSlot(craftSlot, _target.getRecipe().isBig())
+                    : PlayerSlot.getCraftInputSlot(craftSlot);
+            if (isRecipeMaterialOrOutput(StorageHelper.getItemStackInSlot(currentCraftSlot))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     protected boolean isEqual(Task other) {
         if (other instanceof CraftGenericManuallyTask task) {
             return task._target.equals(_target);
@@ -138,5 +167,21 @@ public class CraftGenericManuallyTask extends Task implements ITaskUsesCraftingG
     @Override
     protected String toDebugString() {
         return "Crafting: " + _target;
+    }
+
+    private boolean isRecipeMaterialOrOutput(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+        if (stack.getItem() == _target.getOutputItem()) {
+            return true;
+        }
+        for (int i = 0; i < _target.getRecipe().getSlotCount(); ++i) {
+            ItemTarget target = _target.getRecipe().getSlot(i);
+            if (target != null && target.matches(stack.getItem())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

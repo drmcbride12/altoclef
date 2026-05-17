@@ -7,5 +7,5 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(AbstractArrow.class)
 public interface PersistentProjectileEntityAccessor {
     @Invoker("isInGround")
-    boolean isInGround();
+    boolean altoclef$isInGround();
 }

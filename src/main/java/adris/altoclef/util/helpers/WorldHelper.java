@@ -49,9 +49,19 @@ import java.util.*;
  */
 public interface WorldHelper {
 
-    // God bless 1.18
+    // Fallback bounds for when no world is loaded.
     int WORLD_CEILING_Y = 255;
     int WORLD_FLOOR_Y = 0;
+
+    static int getWorldMinY(AltoClef mod) {
+        ClientLevel world = mod != null ? mod.getWorld() : Minecraft.getInstance().level;
+        return world != null ? world.getMinY() : WORLD_FLOOR_Y;
+    }
+
+    static int getWorldMaxY(AltoClef mod) {
+        ClientLevel world = mod != null ? mod.getWorld() : Minecraft.getInstance().level;
+        return world != null ? world.getMaxY() - 1 : WORLD_CEILING_Y;
+    }
 
     /**
      * Get the number of in-game ticks the game/world has been active for.
@@ -186,7 +196,7 @@ public interface WorldHelper {
     }
 
     static int getGroundHeight(AltoClef mod, int x, int z) {
-        for (int y = WORLD_CEILING_Y; y >= WORLD_FLOOR_Y; --y) {
+        for (int y = getWorldMaxY(mod); y >= getWorldMinY(mod); --y) {
             BlockPos check = new BlockPos(x, y, z);
             if (isSolid(mod, check)) return y;
         }
@@ -210,7 +220,7 @@ public interface WorldHelper {
 
     static int getGroundHeight(AltoClef mod, int x, int z, Block... groundBlocks) {
         Set<Block> possibleBlocks = new HashSet<>(Arrays.asList(groundBlocks));
-        for (int y = WORLD_CEILING_Y; y >= WORLD_FLOOR_Y; --y) {
+        for (int y = getWorldMaxY(mod); y >= getWorldMinY(mod); --y) {
             BlockPos check = new BlockPos(x, y, z);
             if (possibleBlocks.contains(mod.getWorld().getBlockState(check).getBlock())) return y;
 
@@ -246,7 +256,7 @@ public interface WorldHelper {
             return true;
         }
         // Fall down
-        for (int dy = 1; dy <= toBreak.getY() - WORLD_FLOOR_Y; ++dy) {
+        for (int dy = 1; dy <= toBreak.getY() - getWorldMinY(mod); ++dy) {
             BlockPos check = toBreak.below(dy);
             BlockState s = mod.getWorld().getBlockState(check);
             boolean tooFarToFall = dy > mod.getClientBaritoneSettings().maxFallHeightNoWater.value;

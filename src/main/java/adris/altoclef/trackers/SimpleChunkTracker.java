@@ -73,7 +73,7 @@ public class SimpleChunkTracker {
         if (!isChunkLoaded(chunk)) return false;
         //Debug.logInternal("SCANNED CHUNK " + chunk.toString());
         for (int xx = chunk.getMinBlockX(); xx <= chunk.getMaxBlockX(); ++xx) {
-            for (int yy = WorldHelper.WORLD_FLOOR_Y; yy <= WorldHelper.WORLD_CEILING_Y; ++yy) {
+            for (int yy = WorldHelper.getWorldMinY(_mod); yy <= WorldHelper.getWorldMaxY(_mod); ++yy) {
                 for (int zz = chunk.getMinBlockZ(); zz <= chunk.getMaxBlockZ(); ++zz) {
                     if (onBlockStop.test(new BlockPos(xx, yy, zz))) return true;
                 }
