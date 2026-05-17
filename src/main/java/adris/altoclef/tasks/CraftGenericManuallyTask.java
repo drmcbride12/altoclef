@@ -97,6 +97,11 @@ public class CraftGenericManuallyTask extends Task implements ITaskUsesCraftingG
                 // We could be OVER satisfied
                 boolean oversatisfies = present.getCount() > requiredPerSlot;
                 if (oversatisfies) {
+                    ItemStack cursor = StorageHelper.getItemStackInCursorSlot();
+                    if (!cursor.isEmpty()) {
+                        setDebugState("Clearing cursor before fixing overfilled recipe slot.");
+                        return getCursorClearingTask(mod, cursor);
+                    }
                     setDebugState("OVER SATISFIED slot! Right clicking slot to extract half and spread it out more.");
                     return new ClickSlotTask(currentCraftSlot, 1);
                 }
@@ -106,13 +111,7 @@ public class CraftGenericManuallyTask extends Task implements ITaskUsesCraftingG
         // Ensure our cursor is empty/can receive our item
         ItemStack cursor = StorageHelper.getItemStackInCursorSlot();
         if (!ItemHelper.canStackTogether(StorageHelper.getItemStackInSlot(outputSlot), cursor)) {
-            Optional<Slot> toFit = mod.getItemStorage().getSlotThatCanFitInPlayerInventory(cursor, false).or(() -> StorageHelper.getGarbageSlot(mod));
-            if (toFit.isPresent()) {
-                return new ClickSlotTask(toFit.get());
-            } else {
-                // Eh screw it
-                return new ThrowCursorTask();
-            }
+            return getCursorClearingTask(mod, cursor);
         }
 
         if (!StorageHelper.getItemStackInSlot(outputSlot).isEmpty()) {
@@ -183,5 +182,13 @@ public class CraftGenericManuallyTask extends Task implements ITaskUsesCraftingG
             }
         }
         return false;
+    }
+
+    private Task getCursorClearingTask(AltoClef mod, ItemStack cursor) {
+        Optional<Slot> toFit = mod.getItemStorage().getSlotThatCanFitInPlayerInventory(cursor, false).or(() -> StorageHelper.getGarbageSlot(mod));
+        if (toFit.isPresent()) {
+            return new ClickSlotTask(toFit.get());
+        }
+        return new ThrowCursorTask();
     }
 }
