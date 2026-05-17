@@ -6,11 +6,17 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
+def baritoneRuntimeDependency = "baritone:baritone-fabric-26.1.2-dev-shadow-altoclef:26.1.2-altoclef@jar"
+def projectName = project.name
+
 base {
     archivesName = project.archives_base_name
 }
 
 repositories {
+    flatDir {
+        dirs "libs"
+    }
     maven {
         name = "LocalBaritone"
         url = uri("local-maven")
@@ -38,10 +44,10 @@ dependencies {
     include "com.fasterxml.jackson.core:jackson-annotations:${project.jackson_version}"
     include "com.fasterxml.jackson.core:jackson-databind:${project.jackson_version}"
 
-    compileOnly files("libs/baritone-fabric-1.21.4-dev-shadow-altoclef.jar")
-    runtimeOnly files("libs/baritone-fabric-26.1.2-dev-shadow-altoclef.jar")
+    compileOnly baritoneRuntimeDependency
+    runtimeOnly baritoneRuntimeDependency
     implementation "dev.babbaj:nether-pathfinder:1.4.1"
-    include "baritone:altoclef-runtime:26.1.2-altoclef"
+    include baritoneRuntimeDependency
     include "dev.babbaj:nether-pathfinder:1.4.1"
 }
 
@@ -68,7 +74,7 @@ java {
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.name}" }
+        rename { "${it}_${projectName}" }
     }
 }
 
